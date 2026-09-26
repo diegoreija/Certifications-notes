@@ -1,11 +1,7 @@
 <div align="center">
-
-# 🛡️ WEB APPLICATION VULNERABILITIES
+<img src="images/ejptv2-logo.png" alt="eJPTv2" width="150">
+#  WEB APPLICATION VULNERABILITIES
 ### *Manual Didáctico y Guía de Referencia Práctica – Certificación eJPT*
-
-![Reference](<img src="images/ejptv2-logo.png" alt="eJPTv2" width="150">)
-![OWASP](https://img.shields.io/badge/OWASP-Top_Web_Vulnerabilities-blue?style=for-the-badge)
-![Reference](https://img.shields.io/badge/Uso-Examen_|_Trabajo_|_Clase-success?style=for-the-badge)
 
 </div>
 
