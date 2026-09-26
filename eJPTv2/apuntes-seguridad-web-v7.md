@@ -18,6 +18,7 @@
 | **Referencias IDOR** | Identificadores en URLs (`?user_id=105`), JSON POST, rutas REST API. | Cambiar ID (`105` $\rightarrow$ `106`), decodificar Base64, probar Técnica de 2 Cuentas. | Visualización o modificación de datos pertenecientes a otro usuario. |
 
 ---
+<img src="/images/SLQ-Injection-Introduction.png" with="80px">
 
 ## 1. Introducción a la Inyección SQL
 
