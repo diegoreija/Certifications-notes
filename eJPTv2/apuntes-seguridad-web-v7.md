@@ -1,5 +1,5 @@
 <h1>
-  <img src="https://cdn-images.tryhackme.com/modules/web-application-vulnerabilities-i-1778910743514.svg" width="45px">
+  <img src="https://cdn-images.tryhackme.com/modules/web-application-vulnerabilities-i-1778910743514.svg" width="55px">
   <span> VULNERABILIDADES EN APLICACIONES WEB I</span>
 </h1>
  
@@ -11,7 +11,7 @@
 
 ---
 
-## 🚀 Matriz de Consulta Rápida (Tabla de Referencia Express)
+##  Matriz de Consulta Rápida (Tabla de Referencia Express)
 
 | Vulnerabilidad | Vector / Dónde Buscar | Payload / Prueba Rápida | Indicador de Éxito |
 | :--- | :--- | :--- | :--- |
@@ -22,8 +22,9 @@
 | **Referencias IDOR** | Identificadores en URLs (`?user_id=105`), JSON POST, rutas REST API. | Cambiar ID (`105` $\rightarrow$ `106`), decodificar Base64, probar Técnica de 2 Cuentas. | Visualización o modificación de datos pertenecientes a otro usuario. |
 
 ---
+
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1779110941603" width="45px">
+  <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1779110941603" width="40px">
   <span>Introducción a la Inyección SQL</span>
 </h2>
 
@@ -136,6 +137,8 @@ La prevención efectiva de inyección SQL requiere aplicar defensas en profundid
 * **Principio de Mínimo Privilegio:** Configurar la cuenta de base de datos de la web con los permisos mínimos indispensables, impidiendo ejecuciones de comandos de sistema o lectura de esquemas administrativos.
 * **Firewalls de Aplicación Web (WAF):** Inspeccionan las peticiones entrantes para bloquear patrones de ataque conocidos, funcionando como una capa de protección complementaria.
 
+<br>
+
 ---
 
 <h2>
@@ -177,8 +180,11 @@ Cuando la víctima abre el enlace, el script de JavaScript envía el formulario 
 * **Reautenticación:** Solicitar la contraseña actual del usuario antes de confirmar operaciones críticas como cambios de clave o transferencias bancarias.
 
 ---
+<br>
 
-## 3. Introducción a XSS (Scripts en Sitios Cruzados)
+<h2 src="https://cdn-images.tryhackme.com/room-icons/691e303c8bb7e99b93a58132-1775464376816" width="40px">
+  <span> Introducción a XSS (Scripts en Sitios Cruzados)</span>
+</h2>
 
 ### 3.1 ¿Qué es XSS y Causa Raíz?
 Cross-Site Scripting (XSS) es una vulnerabilidad de inyección de código que ocurre cuando una aplicación web incluye datos no confiables proporcionados por el usuario dentro del contenido de una página web enviada al navegador, sin haberlos saneado o codificado previamente.
