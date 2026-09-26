@@ -1,5 +1,5 @@
 <h1>
-  <img src="https://assets.tryhackme.com/img/modules/nmap.png" width="45px" align="absmiddle">
+  <img src="https://assets.tryhackme.com/img/modules/nmap.png" width="65px" align="absmiddle">
   <span>    NMAP: DESCUBRIMIENTO DE HOSTS Y ESCANEO DE PUERTOS</span>
 </h1>
 
