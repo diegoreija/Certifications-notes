@@ -1,4 +1,8 @@
-# 🛡️ VULNERABILIDADES EN APLICACIONES WEB I
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/web-application-vulnerabilities-i-1778910743514.svg" width="45px">
+  <span> VULNERABILIDADES EN APLICACIONES WEB I</span>
+</h1>
+ 
 ### *Guía de Referencia y Explotación – Certificación eJPT*
 
 ---
@@ -18,11 +22,12 @@
 | **Referencias IDOR** | Identificadores en URLs (`?user_id=105`), JSON POST, rutas REST API. | Cambiar ID (`105` $\rightarrow$ `106`), decodificar Base64, probar Técnica de 2 Cuentas. | Visualización o modificación de datos pertenecientes a otro usuario. |
 
 ---
-<img src="/images/SLQ-Injection-Introduction.png" with="80px">
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1779110941603" width="45px">
+  <span>Introducción a la Inyección SQL</span>
+</h2>
 
-## 1. Introducción a la Inyección SQL
-
-### 1.1 Fundamentos de SQL para Inyección
+#### 1.1 Fundamentos de SQL para Inyección
 Antes de profundizar en las técnicas de inyección, es fundamental comprender ciertos bloques de construcción del lenguaje SQL que permiten manipular las consultas de forma avanzada.
 
 Los comentarios en SQL le indican a la base de datos que ignore todo el texto que aparece a continuación en la misma línea. En MySQL se utiliza el doble guión seguido de un espacio (`-- `) o el símbolo de almohadilla (`#`), mientras que los comentarios multilínea utilizan `/* */`. En un ataque, comentar el resto de la consulta es crucial para eliminar la sintaxis posterior que generaría un error de código.
@@ -35,7 +40,9 @@ Las funciones de cadenas facilitan la exfiltración masiva. La función `GROUP_C
 
 Por último, la base de datos `information_schema` es el catálogo de metadatos presente en motores como MySQL, MariaDB y PostgreSQL. Destacan dos tablas principales: `information_schema.tables` (que enumera todas las tablas de la base de datos) e `information_schema.columns` (que detalla los nombres de las columnas de cada tabla).
 
-### 1.2 ¿Qué es la Inyección SQL?
+
+
+#### 1.2 ¿Qué es la Inyección SQL?
 La inyección SQL ocurre cuando una aplicación web toma la entrada proporcionada por el usuario y la concatena directamente dentro de una consulta SQL sin desinfectarla ni parametrizarla adecuadamente. Como resultado, el intérprete de la base de datos trata la entrada del usuario como código ejecutable en lugar de como datos planos.
 
 Las aplicaciones web dinámicas consultan la base de datos constantemente para construir el contenido visualizado. Si el código fuente backend construye una instrucción mediante concatenación directa de cadenas, cualquier carácter especial introducido en los parámetros cambiará la lógica del comando.
@@ -44,7 +51,7 @@ Existen tres categorías principales de inyección SQL según la forma en que el
 
 Para detectar vulnerabilidades SQLi, el método inicial consiste en inyectar caracteres de prueba como la comilla simple (`'`), la comilla doble (`"`), el comentario (`;--`) o condiciones lógicas (`OR 1=1`) en parámetros de URL, formularios de login, encabezados HTTP o cookies, observando si la aplicación devuelve errores internos o cambia su comportamiento.
 
-### 1.3 Inyección SQL En Banda (In-Band)
+#### 1.3 Inyección SQL En Banda (In-Band)
 La inyección en banda es el tipo más directo y sencillo de explotar porque el mismo canal utilizado para enviar el payload muestra los datos extraídos.
 
 #### Inyección Basada en Errores (Error-Based)
@@ -117,7 +124,10 @@ La prevención efectiva de inyección SQL requiere aplicar defensas en profundid
 
 ---
 
-## 2. Introducción a CSRF (Falsificación de Solicitudes)
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1775466711834" width="45px">
+  <span>Introducción a CSRF (Falsificación de Solicitudes)</span>
+</h2>
 
 ### 2.1 ¿Qué es CSRF?
 CSRF (Cross-Site Request Forgery) es una vulnerabilidad de control de acceso que engaña al navegador de un usuario autenticado para que ejecute acciones no deseadas en una aplicación web en la que el usuario tiene una sesión activa.
