@@ -5,7 +5,6 @@
 
 ![eJPT Logo](https://img.shields.io/badge/eJPTv2-eLearnSecurity_Junior_Penetration_Tester-red?style=for-the-badge&logo=shield)
 ![OWASP](https://img.shields.io/badge/OWASP-Top_Web_Vulnerabilities-blue?style=for-the-badge)
-![Reference](https://img.shields.io/badge/Uso-Examen_|_Trabajo_|_Clase-success?style=for-the-badge)
 
 ---
 
