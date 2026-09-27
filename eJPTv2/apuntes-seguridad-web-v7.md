@@ -32,7 +32,7 @@
 
 
 <h3>1.1 Fundamentos de SQL para Inyección</h3>
-Antes de profundizar en las técnicas de inyección, es fundamental comprender ciertos bloques de construcción del lenguaje SQL que permiten manipular las consultas de forma avanzada.
+  Antes de profundizar en las técnicas de inyección, es fundamental comprender ciertos bloques de construcción del lenguaje SQL que permiten manipular las      consultas de forma avanzada.
 
 Los comentarios en SQL le indican a la base de datos que ignore todo el texto que aparece a continuación en la misma línea. En MySQL se utiliza el doble guión seguido de un espacio (`-- `) o el símbolo de almohadilla (`#`), mientras que los comentarios multilínea utilizan `/* */`. En un ataque, comentar el resto de la consulta es crucial para eliminar la sintaxis posterior que generaría un error de código.
 
