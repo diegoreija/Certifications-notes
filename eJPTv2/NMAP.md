@@ -38,7 +38,7 @@
 
 <h1>
   <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778939441152" width="40px" align="absmiddle">
-  <span>Descubrimiento de Hosts en Vivo</span>
+  <span> Descubrimiento de Hosts en Vivo</span>
 </h1>
 
 ### 1.1 Introducción a Nmap y Arquitectura de Red
@@ -63,7 +63,7 @@ Es crucial entender que los paquetes ARP pertenecen estrictamente a la capa de e
 
 <h1>
   <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778940381346" width="40px" align="absmiddle">
-  <span>Escaneo Básico de Puertos</span>
+  <span> Escaneo Básico de Puertos</span>
 </h1>
 
 ### 2.1 Puertos TCP y UDP y los Seis Estados de Nmap
