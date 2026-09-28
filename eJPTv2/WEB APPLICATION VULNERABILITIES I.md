@@ -1,30 +1,27 @@
-# 🛡️ GUÍA EXTENSIVA DE VULNERABILIDADES WEB: SQLi, CSRF, XSS, SSRF E IDOR
-### *Guía de Referencia y Explotación Extensiva – Certificación eJPT*
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/web-application-vulnerabilities-i-1778910743514.svg" width="70px" align="absmiddle">
+  <span> WEB APPLICATION VULNERABILITIES I</span>
+</h1>
 
 ---
 
-> **Estructura del Manual:** Organizado exactamente según los apuntes de Notion de TryHackMe (**Web Application Vulnerabilities I**). Cada sección principal contiene explicaciones conceptuales exhaustivas, vectores de ataque, desgloses técnicos paso a paso, ejemplos prácticos de laboratorio, técnicas de elusión (*bypasses*) y métodos de remediación.
+> Este módulo lo guía a través de cinco de las vulnerabilidades más impactantes en las aplicaciones web modernas, examinando cómo funciona cada una, por qué persiste y cómo los atacantes la explotan en la naturaleza. Comenzará con los clásicos, la inyección de SQL y el scripting entre sitios, antes de pasar a errores más sutiles como CSRF, SSRF e IDOR que a menudo pasan por alto incluso a los desarrolladores experimentados. Un desafío práctico final reúne todas las técnicas, por lo que terminas el módulo capaz de detectar estos problemas rápidamente y explotarlos con confianza.
 
 ---
 
-## 🚀 Matriz de Consulta Rápida (Tabla de Referencia Express)
+<br>
 
-| Vulnerabilidad | Vector / Dónde Buscar | Payload / Prueba Rápida | Indicador de Éxito |
-| :--- | :--- | :--- | :--- |
-| **Inyección SQL (SQLi)** | Parámetros URL (`?id=1`), formularios de login, campos de búsqueda. | `'` \| `"` \| `' OR 1=1;--` \| `UNION SELECT 1,2,3--` | Mensajes de error SQL, bypass de login, datos de otras tablas en pantalla. |
-| **Falsificación CSRF** | Cambios de estado (email, clave) sin tokens en formularios POST/GET. | Formulario HTML oculto con envío automático JS (`document.forms[0].submit()`). | Cambio de estado realizado sin consentimiento del usuario autenticado. |
-| **Scripts Cruzados (XSS)** | Entradas reflejadas en HTML, comentarios, campos de perfil, fragmentos DOM. | `<script>alert('XSS')</script>` \| `"><img src=x onerror=alert(1)>` | Ejecución de alerta JavaScript o pop-up en el navegador de la víctima. |
-| **Falsificación SSRF** | Parámetros que reciben URLs, imágenes, webhooks, generadores de PDF. | `http://127.0.0.1`, `http://127.1`, `http://169.254.169.254` | Acceso a servicios internos, metadatos cloud de AWS/GCP o conexiones salientes. |
-| **Referencias IDOR** | Identificadores en URLs (`?user_id=105`), JSON POST, rutas REST API. | Cambiar ID (`105` $\rightarrow$ `106`), decodificar Base64, probar Técnica de 2 Cuentas. | Visualización o modificación de datos pertenecientes a otro usuario. |
-
----
-
-## 1. Introducción a la Inyección SQL (SQL Injection)
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1779110941603" width="60px" align="absmiddle">
+  <span> Introducción a la Inyección SQL (SQL Injection)</span>
+</h2>
 
 ### 1.1 Introducción
 La inyección SQL (SQLi) es una de las vulnerabilidades de aplicaciones web más conocidas y peligrosas. Enumerada en la categoría A05:2025 - Inyección del OWASP Top 10, ocurre cuando un atacante es capaz de manipular las consultas SQL que una aplicación web envía a su base de datos. Las consecuencias pueden ser severas: acceso no autorizado a datos confidenciales, anulación de autenticación, modificación o eliminación de registros y, en ciertos casos, el control total del servidor de base de datos.
 
 A pesar de ser una de las clases de vulnerabilidades más antiguas, SQLi sigue apareciendo en aplicaciones modernas y ha sido la causa raíz de numerosas filtraciones de datos de alto perfil. Para un pentester, entender cómo identificar y explotar SQLi es una habilidad fundamental durante toda su carrera.
+
+<br>
 
 ### 1.2 Fundamentos de SQL para Inyección (SQL Essentials for Injection)
 Antes de profundizar en las técnicas de inyección, es necesario entender varios elementos avanzados del lenguaje SQL que sirven como bloques de construcción para los payloads.
@@ -51,6 +48,8 @@ Los motores MySQL, MariaDB y PostgreSQL incluyen una base de datos integrada lla
 `information_schema.tables`: Contiene el nombre de cada base de datos (`table_schema`) y sus tablas (`table_name`).
 `information_schema.columns`: Detalla las columnas (`column_name`) pertenecientes a cada tabla.
 
+<br>
+
 ### 1.3 ¿Qué es la Inyección SQL? (What is SQL Injection?)
 Ocurre cuando una aplicación web incorpora la entrada del usuario directamente dentro de una consulta SQL sin saneamiento ni parametrización. El intérprete trata la entrada como código ejecutable en lugar de como datos planos.
 
@@ -71,6 +70,8 @@ Comilla simple `'`: Si devuelve un error de base de datos, la entrada no se mane
 Comilla doble `"` y comentarios `;--`: Observar si altera la sintaxis o el comportamiento.
 Lógica `OR 1=1`: Verificar si modifica los registros mostrados.
 
+<br>
+
 ### 1.4 Inyección SQL En Banda (In-Band SQL Injection)
 #### Basada en Errores (Error-Based SQLi)
 Aprovecha las malas configuraciones donde la aplicación expone mensajes de error técnicos sin procesar. Estos errores revelan el tipo de motor de base de datos, la estructura de la consulta e incluso datos internos cuando se provocan fallos deliberados.
@@ -84,10 +85,14 @@ Usa el operador `UNION` para extraer datos siguiendo una metodología paso a pas
 **Enumerar columnas:** Consultar `information_schema.columns`.
 **Extraer datos:** Seleccionar los campos deseados usando `GROUP_CONCAT()`.
 
+<br>
+
 ### 1.5 Inyección SQL Ciega: Anulación de Autenticación (Blind SQLi: Authentication Bypass)
 Ocurre cuando la aplicación no muestra salidas ni errores de la base de datos, pero reacciona permitiendo o denegando el acceso. Los formularios de login verifican credenciales con consultas como `SELECT * FROM users WHERE username='INPUT' AND password='INPUT'`.
 
 Si se inyecta `' OR 1=1;--` en el usuario, la condición `1=1` se evalúa como verdadera y la comprobación de clave queda comentada, devolviendo la cuenta del primer usuario (habitualmente el administrador). Para objetivar un usuario específico se puede inyectar `admin'--`.
+
+<br>
 
 ### 1.6 Inyección SQL Ciega: Basada en Booleanos y Tiempo (Blind SQLi: Boolean and Time-Based)
 #### Basada en Booleanos (Boolean-Based)
@@ -96,10 +101,14 @@ La aplicación devuelve una señal binaria (diferencia entre verdadero/falso en 
 #### Basada en Tiempo (Time-Based)
 Se utiliza cuando la respuesta visual es 100% idéntica. Se inyecta la función `SLEEP(5)` en MySQL o `WAITFOR DELAY '0:0:5'` en MSSQL dentro de una condición lógica. Si la condición es verdadera, el servidor pausará su respuesta durante los segundos indicados.
 
+<br>
+
 ### 1.7 Inyección SQL Fuera de Banda (Out-of-Band SQL Injection)
 Se utiliza cuando las técnicas en banda no son posibles y las ciegas son inestables o demasiado lentas. Requiere que el servidor de base de datos tenga permisos para realizar conexiones de red salientes.
 
 En MySQL sobre Windows, se usa `LOAD_FILE()` especificando una ruta UNC (`\\data.attacker.com\share`). En MSSQL, se utilizan procedimientos como `xp_dirtree` o `xp_cmdshell` para forzar la resolución DNS o ejecutar comandos de red.
+
+<br>
 
 ### 1.8 Remediación y Prevención de SQLi
 **Consultas Preparadas (Sentencias Parametrizadas):** Separan la estructura de la consulta de los datos introducidos por el usuario, imposibilitando que la entrada altere la lógica SQL.
@@ -107,6 +116,8 @@ En MySQL sobre Windows, se usa `LOAD_FILE()` especificando una ruta UNC (`\\data
 **Escapado de Caracteres:** Colocar barras invertidas ante caracteres especiales (medida de segundo nivel).
 **Principio de Mínimo Privilegio:** Restringir los permisos de la cuenta de base de datos utilizada por la aplicación web.
 **Firewalls de Aplicación Web (WAF):** Inspeccionar solicitudes entrantes para filtrar patrones de ataque conocidos.
+
+<br>
 
 ### 1.9 Práctica Guiada: Laboratorio de Inyección SQL
 En la resolución práctica del laboratorio *Level One - Error Based SQLi*:
@@ -117,14 +128,23 @@ En la resolución práctica del laboratorio *Level One - Error Based SQLi*:
 **Enumeración de columnas:** `id=0 UNION SELECT 1,2,group_concat(column_name) FROM information_schema.columns WHERE table_name='staff_users'` devuelve `id,password,username`.
 **Exfiltración de credenciales:** `id=0 UNION SELECT 1,2,group_concat(username,':',password SEPARATOR '<br>') FROM staff_users` expone las credenciales, obteniendo la clave del usuario `martin` (`pa$$word`).
 
+<br>
+
 ---
 
-## 2. Introducción a la Falsificación de Solicitudes en Sitios Cruzados (CSRF)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1775466711834" width="60px" align="absmiddle">
+  <span> Introducción a la Falsificación de Solicitudes en Sitios Cruzados (CSRF)</span>
+</h2>
 
 ### 2.1 Introducción y Concepto General
 Las aplicaciones web modernas dependen de las sesiones autenticadas para llevar a cabo acciones en nombre de los usuarios. Cuando un usuario inicia sesión en una aplicación web, el servidor genera un identificador de sesión que se almacena en el navegador en forma de cookie de sesión. En cada interacción posterior, el navegador adjunta automáticamente esta cookie para que el servidor reconozca al usuario.
 
 Aunque este mecanismo aporta comodidad, genera una vulnerabilidad crítica conocida como **Falsificación de Solicitudes en Sitios Cruzados (Cross-Site Request Forgery - CSRF)**. En lugar de intentar robar las credenciales o la cookie de la víctima, un ataque CSRF engaña al navegador para que envíe una solicitud HTTP maliciosa a un sitio web donde el usuario ya se encuentra autenticado. Dado que el navegador adjunta automáticamente la cookie de sesión legítima, la aplicación web procesa la petición como si hubiera sido realizada intencionadamente por el usuario.
+
+<br>
 
 ### 2.2 ¿Qué es CSRF? (What is CSRF?)
 CSRF es una vulnerabilidad de control de acceso en la que un atacante abusa de la relación de confianza entre el navegador de la víctima y el sitio web de destino. Cuando un usuario autenticado visita una página web maliciosa controlada por el atacante mientras mantiene su sesión abierta en el sitio legítimo, esa página maliciosa puede desencadenar silenciosamente peticiones dirigidas al sitio de destino.
@@ -132,9 +152,11 @@ CSRF es una vulnerabilidad de control de acceso en la que un atacante abusa de l
 Si la solicitud ejecuta una acción confidencial o altera el estado del sistema (por ejemplo, cambiar la dirección de correo electrónico, actualizar la clave, realizar transferencias bancarias o modificar preferencias de seguridad), el atacante puede tomar el control parcial o total de la cuenta sin necesidad de conocer la contraseña del usuario.
 
 #### Mecánica de un Ataque CSRF en Tres Pasos:
-**Autenticación Inicial:** La víctima inicia sesión en una aplicación web legítima (ejemplo: `staffhub.thm`) y su navegador guarda la cookie de sesión correspondiente.
-**Atracción y Ejecución:** El atacante utiliza ingeniería social (un enlace por correo electrónico, mensaje en chat o banner) para lograr que la víctima visite una página web maliciosa.
-**Petición Falsificada Automática:** La página maliciosa contiene un script o formulario que obliga al navegador de la víctima a enviar una solicitud a la aplicación web de destino. El navegador adjunta automáticamente la cookie de sesión válida y el servidor ejecuta la acción.
+* **Autenticación Inicial:** La víctima inicia sesión en una aplicación web legítima (ejemplo: `staffhub.thm`) y su navegador guarda la cookie de sesión correspondiente.
+* **Atracción y Ejecución:** El atacante utiliza ingeniería social (un enlace por correo electrónico, mensaje en chat o banner) para lograr que la víctima visite una página web maliciosa.
+* **Petición Falsificada Automática:** La página maliciosa contiene un script o formulario que obliga al navegador de la víctima a enviar una solicitud a la aplicación web de destino. El navegador adjunta automáticamente la cookie de sesión válida y el servidor ejecuta la acción.
+
+<br>
 
 ### 2.3 Por qué funciona CSRF (Why CSRF Works)
 Es fundamental comprender que CSRF no existe porque los navegadores estén "rotos" o funcionen mal. De hecho, los navegadores se comportan exactamente conforme a sus especificaciones de diseño al incluir automáticamente las cookies asociadas a un dominio en cada petición saliente dirigida a ese mismo dominio.
@@ -143,9 +165,11 @@ El problema radica exclusivamente en el servidor de la aplicación web: el servi
 
 #### Condiciones Clave para que exista una Vulnerabilidad CSRF:
  Para que un punto final (*endpoint*) sea susceptible a un ataque CSRF, deben coincidir tres condiciones simultáneas:
-**Usuario Autenticado:** La víctima debe contar con una sesión activa en la aplicación de destino y disponer de una cookie de sesión almacenada en su navegador.
-**Acción de Cambio de Estado:** La solicitud debe realizar una operación relevante que altere datos o configuraciones en el servidor (no simplemente consultar o leer información).
-**Ausencia de Parámetros Impredecibles:** La solicitud no contiene ningún parámetro aleatorio o impredecible para el atacante (como tokens anti-CSRF). El atacante conoce con precisión la estructura exacta de la petición necesaria para ejecutar la acción.
+* **Usuario Autenticado:** La víctima debe contar con una sesión activa en la aplicación de destino y disponer de una cookie de sesión almacenada en su navegador.
+* **Acción de Cambio de Estado:** La solicitud debe realizar una operación relevante que altere datos o configuraciones en el servidor (no simplemente consultar o leer información).
+* **Ausencia de Parámetros Impredecibles:** La solicitud no contiene ningún parámetro aleatorio o impredecible para el atacante (como tokens anti-CSRF). El atacante conoce con precisión la estructura exacta de la petición necesaria para ejecutar la acción.
+
+<br>
 
 ### 2.4 Identificación y Descubrimiento de Vulnerabilidades CSRF
 Durante una auditoría de seguridad o prueba de penetración, el auditor debe inspeccionar las funcionalidades de la aplicación e identificar qué solicitudes realizan cambios de estado. 
@@ -161,6 +185,8 @@ Modificación de ajustes de seguridad (como desactivar la verificación en dos p
 Existe el mito muy extendido de que usar el método HTTP `POST` en lugar de `GET` protege automáticamente a una aplicación contra ataques CSRF. **Esto es completamente falso.** 
 
 Tanto las peticiones `GET` como las `POST` son vulnerables si el servidor no comprueba el origen de la solicitud. Si bien una petición `GET` vulnerable se puede explotar fácilmente mediante una simple etiqueta HTML de imagen (`<img src="http://vulnerable.com/change-email?email=evil@mail.com">`) o un enlace, una petición `POST` se explota con igual facilidad mediante un formulario HTML oculto enviado automáticamente con JavaScript. Por tanto, el método de la petición no constituye una medida de seguridad por sí mismo.
+
+<br>
 
 ### 2.5 Explotación mediante Formularios HTML y Caso Práctico
 En el laboratorio práctico de la sala de TryHackMe (*StaffHub* en `http://staffhub.thm:8080`), los usuarios pueden cambiar su correo electrónico en la página de configuración. Al inspeccionar la solicitud HTTP emitida al guardar el formulario, se observa una petición `POST` a `/settings` conteniendo únicamente el parámetro `email`. No existe ningún token anti-CSRF ni parámetro de verificación adicional.
@@ -196,16 +222,26 @@ El navegador de la víctima procesa la petición `POST` hacia `http://staffhub.t
 El servidor backend de StaffHub recibe la petición, valida la cookie de sesión legítima, no encuentra ningún token que verifique el origen y actualiza la dirección de correo a `attacker@evilmail.thm`.
 El atacante ahora puede solicitar el restablecimiento de contraseña hacia su propio correo y apoderarse por completo de la cuenta.
 
+<br>
+
 ### 2.6 Remediación y Prevención de CSRF
 **Tokens Anti-CSRF:** Es la defensa principal y más efectiva. El servidor genera un token aleatorio, único, criptográficamente seguro y asociado a la sesión del usuario. Cada formulario de cambio de estado debe incluir este token en un campo oculto (`<input type="hidden" name="csrf_token" value="...">`). Al recibir la solicitud, el servidor compara el token enviado con el almacenado en la sesión; si no coinciden o falta, la solicitud se descarta.
 **Atributos de Cookie `SameSite`:** Configurar las cookies de sesión con las banderas de seguridad adecuadas:
 `SameSite=Strict`: Impide que el navegador envíe la cookie en cualquier petición desencadenada por un sitio de origen cruzado. Es la protección máxima.
 `SameSite=Lax`: Permite enviar la cookie únicamente en navegaciones de nivel superior iniciadas por el usuario mediante enlaces seguros `GET`, bloqueando el envío en formularios `POST` de origen cruzado.
-**Reautenticación de Operaciones Sensibles:** Solicitar al usuario que ingrese su contraseña actual antes de procesar cambios críticos (como modificar la clave o el correo electrónico).
-**Verificación de Encabezados `Origin` y `Referer`:** Comprobar en el lado del servidor que los encabezados HTTP `Origin` o `Referer` coincidan con el dominio legítimo de la aplicación.
+* **Reautenticación de Operaciones Sensibles:** Solicitar al usuario que ingrese su contraseña actual antes de procesar cambios críticos (como modificar la clave o el correo electrónico).
+* **Verificación de Encabezados `Origin` y `Referer`:** Comprobar en el lado del servidor que los encabezados HTTP `Origin` o `Referer` coincidan con el dominio legítimo de la aplicación.
+
+<br>
 
 ---
 
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1775466711834" width="60px" align="absmiddle">
+  <span> Introducción a la Falsificación de Solicitudes en Sitios Cruzados (CSRF)</span>
+</h2>
 ## 3. Introducción a Scripts en Sitios Cruzados (XSS)
 
 ### 3.1 Introducción y Terminología Importante
