@@ -512,13 +512,23 @@ Si las listas de permitidos no pueden eludirse directamente, se busca una vulner
 **Deshabilitar el Seguimiento de Redirecciones HTTP:** Configurar el cliente HTTP del servidor para que no siga automáticamente respuestas de redirección `301` o `302`.
 **Validación de IP tras Resolución DNS:** Resolver el nombre de dominio a una dirección IP antes de emitir la petición y verificar que dicha IP no pertenezca a rangos reservados o privados (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`).
 
+<br>
 
-## 5. Referencias Directas Inseguras a Objetos (IDOR)
+---
+
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/92b349206a2901c187e32ad074eae45c.png" width="60px" align="absmiddle">
+  <span> Referencias Directas Inseguras a Objetos (IDOR)</span>
+</h2>
 
 ### 5.1 ¿Qué es IDOR?
 Las aplicaciones web utilizan identificadores (números, cadenas o claves) para hacer referencia a recursos almacenados en sus bases de datos (perfiles de usuario, facturas, tickets de soporte, documentos privados). Una **Referencia Directa Insegura a Objetos (Insecure Direct Object Reference - IDOR)** ocurre cuando una aplicación permite al usuario proporcionar un identificador para acceder a un recurso y el servidor procesa la solicitud recuperando el objeto sin verificar si el usuario actual tiene permisos o autorización sobre él.
 
 IDOR es una falla de control de acceso categorizada en el puesto **A01:2021 - Broken Access Control** del OWASP Top 10 y bajo el nombre **BOLA (Broken Object Level Authorization)** en el OWASP API Security Top 10. Aunque la terminología varía, la causa raíz es idéntica: el servidor no valida que el usuario autenticado sea el propietario del objeto solicitado.
+
+<br>
 
 ### 5.2 Ejemplo Práctico y Brecha entre Autenticación y Autorización
 Considere un usuario que inicia sesión y navega a su perfil de usuario en la URL:
@@ -532,11 +542,13 @@ Si el usuario modifica manualmente la URL en la barra de direcciones cambiando e
 Si la aplicación responde mostrando el perfil completo de otro usuario, la web presenta una vulnerabilidad IDOR.
 
 #### La Brecha entre Autenticación y Autorización:
-**Autenticación (Funciona Correctamente):** El sistema sabe quién eres porque has iniciado sesión válidamente y posees una cookie de sesión activa.
-**Autorización (Falta por Completo):** El servidor carece de lógica backend que verifique: *“¿Esta sesión activa pertenece al dueño del registro 1000?”*. El servidor asume erróneamente que cualquier usuario autenticado tiene derecho a consultar cualquier objeto cuyo identificador conozca.
+* **Autenticación (Funciona Correctamente):** El sistema sabe quién eres porque has iniciado sesión válidamente y posees una cookie de sesión activa.
+* **Autorización (Falta por Completo):** El servidor carece de lógica backend que verifique: *“¿Esta sesión activa pertenece al dueño del registro 1000?”*. El servidor asume erróneamente que cualquier usuario autenticado tiene derecho a consultar cualquier objeto cuyo identificador conozca.
 
 #### Consecuencias en Operaciones de Escritura:
 IDOR no se limita a operaciones de lectura (`GET`). Si el endpoint vulnerable procesa cambios mediante peticiones `POST` o `PUT` (por ejemplo, `POST /update-email` con el cuerpo `{"user_id": 1000, "email": "attacker@evil.com"}`), un atacante puede modificar la clave o el correo de cualquier usuario, logrando la **toma de control total de la cuenta (*Account Takeover*)**.
+
+<br>
 
 ### 5.3 Descubrimiento de IDORs según el Tipo de Identificador
 Los desarrolladores a menudo intentan proteger los identificadores aplicando codificación o hashing. Sin embargo, estas técnicas no sustituyen al control de acceso:
