@@ -405,9 +405,16 @@ ightarrow$ `&#x27;`.
 **Política de Seguridad de Contenidos (CSP - Content Security Policy):** Implementar encabezados HTTP `Content-Security-Policy` restrictivos para definir qué fuentes de scripts son de confianza y bloquear la ejecución de scripts en línea (*inline scripts*) no autorizados.
 **Marcos de Trabajo Modernos (*Frameworks*):** Utilizar motores de plantillas y frameworks frontend (como React, Angular o Vue) que aplican escapado automático contextual por defecto.
 
+<br>
+
 ---
 
-## 4. Introducción a la Falsificación de Solicitudes en el Servidor (SSRF)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/268e10b8ee0b53d1074b2a7fd5b1a789.png" width="60px" align="absmiddle">
+  <span> Introducción a la Falsificación de Solicitudes en el Servidor (SSRF)</span>
+</h2>
 
 ### 4.1 Introducción y ¿Qué es SSRF?
 **Server-Side Request Forgery (SSRF)** es una vulnerabilidad de seguridad que permite a un atacante manipular una función de la aplicación web del lado del servidor para forzarla a realizar peticiones HTTP (u otros protocolos) hacia direcciones de red arbitrarias elegidas por el atacante.
@@ -415,20 +422,24 @@ ightarrow$ `&#x27;`.
 En un ataque SSRF típico, la aplicación web recibe un parámetro con una dirección URL o nombre de host (por ejemplo, para descargar una imagen de perfil, generar un informe PDF o procesar un webhook) y realiza una conexión HTTP saliente desde el backend. SSRF abusa de la **confianza implícita** que tienen los sistemas y redes internas en el servidor de aplicaciones web: los servicios backend, bases de datos e interfaces de administración locales aceptan las peticiones que se originan desde una IP interna sin solicitar autenticación adicional. El atacante hereda efectivamente esa posición privilegiada en la red.
 
 #### Categorías de SSRF:
-**SSRF Regular (In-Band / Visible):** La respuesta del recurso interno solicitado es devuelta por el servidor e impresa directamente en la pantalla del usuario, permitiendo la lectura inmediata de datos.
+* **SSRF Regular (In-Band / Visible):** La respuesta del recurso interno solicitado es devuelta por el servidor e impresa directamente en la pantalla del usuario, permitiendo la lectura inmediata de datos.
 **SSRF Ciego (Blind SSRF):** La solicitud saliente se realiza con éxito hacia el objetivo interno, pero la aplicación web no muestra el contenido de la respuesta al usuario. Debe confirmarse mediante interacciones fuera de banda (DNS/HTTP callbacks en herramientas como Burp Collaborator) o analizando diferencias de tiempos de respuesta.
+
+<br>
 
 ### 4.2 Impacto de SSRF y Entornos Cloud
 El impacto de una vulnerabilidad SSRF varía en función de la arquitectura de la red interna alcanzable desde el servidor backend:
 
-**Acceso a Interfaces y Paneles Internos:** Permite interactuar con paneles de administración, interfaces de configuración o herramientas de monitoreo locales (`http://localhost/admin` o `http://127.0.0.1:8080`) que no están expuestas a Internet y que confían en las peticiones locales.
-**Exposición de Datos Confidenciales:** Acceso a bases de datos internas, servicios REST privados y herramientas que devuelven registros de clientes, información del sistema o claves de configuración.
-**Reconocimiento de Red Interna:** Mediante el envío masivo de solicitudes a diferentes direcciones IP privadas (rangos `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) y puertos específicos, el atacante puede mapear la topología de la red interna analizando los códigos de estado HTTP y los tiempos de respuesta.
-**Robo de Metadatos en la Nube (Cloud Metadata Exfiltration):** Los proveedores de infraestructura cloud (AWS, Google Cloud, Microsoft Azure, DigitalOcean) exponen un servicio de metadatos de instancia accesible internamente en la IP no enrutable **`169.254.169.254`**. Un atacante que explote SSRF hacia esta dirección puede consultar las credenciales temporales de seguridad y tokens de roles IAM:
+* **Acceso a Interfaces y Paneles Internos:** Permite interactuar con paneles de administración, interfaces de configuración o herramientas de monitoreo locales (`http://localhost/admin` o `http://127.0.0.1:8080`) que no están expuestas a Internet y que confían en las peticiones locales.
+* **Exposición de Datos Confidenciales:** Acceso a bases de datos internas, servicios REST privados y herramientas que devuelven registros de clientes, información del sistema o claves de configuración.
+* **Reconocimiento de Red Interna:** Mediante el envío masivo de solicitudes a diferentes direcciones IP privadas (rangos `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) y puertos específicos, el atacante puede mapear la topología de la red interna analizando los códigos de estado HTTP y los tiempos de respuesta.
+* **Robo de Metadatos en la Nube (Cloud Metadata Exfiltration):** Los proveedores de infraestructura cloud (AWS, Google Cloud, Microsoft Azure, DigitalOcean) exponen un servicio de metadatos de instancia accesible internamente en la IP no enrutable **`169.254.169.254`**. Un atacante que explote SSRF hacia esta dirección puede consultar las credenciales temporales de seguridad y tokens de roles IAM:
   ```http
   http://169.254.169.254/latest/meta-data/iam/security-credentials/
   ```
-**Fuga de Tokens y Credenciales:** Interceptación de tokens de autorización transmitidos entre microservicios internos que operan sobre HTTP sin cifrar.
+* **Fuga de Tokens y Credenciales:** Interceptación de tokens de autorización transmitidos entre microservicios internos que operan sobre HTTP sin cifrar.
+
+<br>
 
 ### 4.3 Ejemplos de Vectores SSRF
 La forma en que la entrada del usuario se incorpora a la solicitud del lado del servidor determina la técnica de explotación:
@@ -501,7 +512,6 @@ Si las listas de permitidos no pueden eludirse directamente, se busca una vulner
 **Deshabilitar el Seguimiento de Redirecciones HTTP:** Configurar el cliente HTTP del servidor para que no siga automáticamente respuestas de redirección `301` o `302`.
 **Validación de IP tras Resolución DNS:** Resolver el nombre de dominio a una dirección IP antes de emitir la petición y verificar que dicha IP no pertenezca a rangos reservados o privados (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`).
 
----
 
 ## 5. Referencias Directas Inseguras a Objetos (IDOR)
 
