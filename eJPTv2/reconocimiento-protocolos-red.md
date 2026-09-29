@@ -132,14 +132,23 @@ Al conectarse al puerto TCP 80 de un servidor web mediante el comando telnet IP 
 
 Por su parte, Netcat (nc) se conoce como la navaja suiza de las redes. Además de actuar como cliente para capturar banners, Netcat puede funcionar como servidor en escucha utilizando la sintaxis nc -vnlp PUERTO. El parámetro -l activa el modo escucha, -p especifica el puerto, -n evita resoluciones DNS para acelerar el proceso y -v activa la salida detallada. Esta capacidad de escucha es fundamental para verificar la conectividad de red, realizar transferencias de archivos sencillas o recibir conexiones de shell inverso durante una auditoría.
 
+<br>
+
 ---
 
-## 3. Protocolos y Servidores I (Protocols and Servers)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/97a29d81bac4063c11b392347214e741.png" width="60px" align="absmiddle">
+  <span> Protocolos y Servidores I (Protocols and Servers)</span>
+</h2>
 
 ### 3.1 Acceso Remoto Inseguro con Telnet
 Telnet es un protocolo de capa de aplicación diseñado para proporcionar acceso a una interfaz de línea de comandos (CLI) en un equipo remoto. Tras establecer la conexión TCP en el puerto 23, el servidor solicita un nombre de usuario y una contraseña. Una vez validada la autenticación, se otorga una consola interactiva en la máquina remota.
 
 La debilidad crítica de Telnet radica en la ausencia total de cifrado. Todos los datos intercambiados —incluyendo el nombre de usuario, la contraseña introducida carácter por carácter y los comandos ejecutados con sus respuestas— se transmiten en texto plano por la red. Cualquier atacante o analizador de tráfico situado en el mismo segmento de red local, en un enrutador intermedio o ejecutando un ataque Man-in-the-Middle (MITM) puede capturar las credenciales sin esfuerzo. En la actualidad, encontrar un servidor Telnet abierto es un indicador claro de la presencia de un sistema heredado, un dispositivo IoT con recursos limitados o una severa mala configuración de seguridad.
+
+<br>
 
 ### 3.2 Protocolo de Transferencia de Hipertexto (HTTP)
 El protocolo HTTP es la columna vertebral de la World Wide Web, diseñado para la transferencia de archivos de hipertexto, código HTML, imágenes y servicios web. Opera bajo una arquitectura cliente-servidor donde el cliente (navegador web) envía solicitudes y el servidor responde con los recursos solicitados o códigos de estado.
@@ -161,6 +170,8 @@ El servidor responde devolviendo la línea de estado (por ejemplo, HTTP/1.1 200 
 #### Servidores Web y Evolución del Protocolo
 Los servidores web más desplegados en la industria son Nginx (destacado por su arquitectura orientada a eventos e impulsado para conexiones concurrentes masivas), Apache HTTP Server (ampliamente configurable mediante módulos y archivos .htaccess), e Internet Information Services (IIS de Microsoft, común en entornos corporativos Windows). Las versiones del protocolo han evolucionado desde HTTP/1.1 (basado en texto y conexiones persistentes) hacia HTTP/2 (que introduce formato binario y multiplexación de peticiones sobre una sola conexión TCP) y HTTP/3 (que reemplaza TCP por el protocolo QUIC sobre UDP, optimizando el rendimiento en redes móviles).
 
+<br>
+
 ### 3.3 Protocolo de Transferencia de Archivos (FTP)
 El protocolo FTP, definido originalmente en los inicios de las redes informáticas, está diseñado para la transferencia eficiente de archivos entre sistemas. Opera mediante dos canales TCP independientes: el canal de control (puerto TCP 21), por donde se transmiten los comandos de autenticación y navegación en texto plano, y el canal de datos, utilizado para la transferencia efectiva de los archivos.
 
@@ -173,6 +184,8 @@ En el Modo Pasivo (solicitado mediante el comando PASV), el cliente inicia ambas
 Un servidor FTP exige autenticarse mediante los comandos USER usuario y PASS contraseña. Si las credenciales son válidas, el servidor permite ejecutar comandos como LIST (listar archivos), RETR (descargar archivo), STOR (subir archivo) y QUIT. El comando TYPE A cambia la transferencia al modo ASCII (para archivos de texto), mientras que TYPE I establece el modo binario (para ejecutables, imágenes o archivos comprimidos).
 
 Muchos servidores FTP están configurados para permitir el acceso anónimo (Anonymous FTP), aceptando el usuario anonymous o ftp con cualquier cadena o correo ficticio como contraseña. Durante una auditoría, verificar la presencia de FTP anónimo es un paso obligado, ya que estos repositorios suelen contener accidentalmente copias de seguridad de bases de datos, archivos de configuración con credenciales o directorios con permisos de escritura donde un atacante podría subir archivos maliciosos. Debido a la falta de cifrado en FTP tradicional, la industria ha migrado hacia SFTP (SSH File Transfer Protocol, ejecutado sobre SSH en el puerto 22) y FTPS (FTP Secure, que añade cifrado TLS sobre el puerto 990 o mediante STARTTLS en el puerto 21).
+
+<br>
 
 ### 3.4 Protocolo Simple de Transferencia de Correo (SMTP)
 El correo electrónico en Internet depende de una arquitectura de componentes interconectados:
@@ -202,6 +215,8 @@ Por favor actualice sus credenciales.
 
 El mensaje finaliza introduciendo un único punto . en una línea independiente. El aspecto más crítico desde la perspectiva de la seguridad es que la especificación original de SMTP no realiza ninguna verificación para comprobar si el emisor especificado en MAIL FROM realmente posee o controla dicha cuenta de correo. Esta carencia fundamental es la causa raíz que permite la suplantación de identidad (Email Spoofing) en ataques de phishing. Para mitigar esta vulnerabilidad, las organizaciones deben desplegar mecanismos de autenticación defensiva en sus registros DNS públicos: SPF (Sender Policy Framework), DKIM (DomainKeys Identified Mail) y DMARC (Domain-based Message Authentication, Reporting, and Conformance).
 
+<br>
+
 ### 3.5 Protocolo de Oficina Postal 3 (POP3)
 El protocolo POP3, definido en el RFC 1939, opera en el puerto TCP 110 (o puerto TCP 995 para su versión cifrada POP3S) y está diseñado para recuperar y descargar los mensajes almacenados en el servidor MDA hacia el cliente local.
 
@@ -209,6 +224,8 @@ El protocolo POP3, definido en el RFC 1939, opera en el puerto TCP 110 (o puerto
 El modelo operativo clásico de POP3 se basa en la descarga y eliminación. Cuando el cliente de correo se conecta al servidor POP3, se autentica mediante los comandos USER usuario y PASS contraseña, consulta los mensajes con STAT (devuelve el número total de correos y el tamaño ocupado) y LIST, descarga el contenido del mensaje con RETR numero_mensaje, y marca el correo para su borrado en el servidor mediante DELE numero_mensaje. La sesión concluye con el comando QUIT, momento en el cual el servidor elimina definitivamente los correos marcados.
 
 Este comportamiento presenta serias limitaciones en la actualidad. Dado que los correos se almacenan únicamente en el equipo local que realizó la descarga, no existe posibilidad de sincronización entre múltiples dispositivos (teléfonos móviles, portátiles, tablets). Si un usuario lee un correo en su ordenador, dicho mensaje no estará disponible en su teléfono móvil. Por esta razón, POP3 se reserva actualmente para escenarios donde el almacenamiento en el servidor es extremadamente reducido o se requiere archivar correo localmente sin conexión.
+
+<br>
 
 ### 3.6 Protocolo de Acceso a Mensajes de Internet (IMAP)
 El protocolo IMAP opera en el puerto TCP 143 (o puerto TCP 993 para IMAPS cifrado con TLS) y fue diseñado para superar las limitaciones de POP3, convirtiéndose en el estándar universal de lectura de correo electrónico.
@@ -221,9 +238,16 @@ Las sesiones IMAP requieren que cada comando enviado por el cliente vaya precedi
 #### Implicaciones de Seguridad
 Dado que IMAP tradicional envía credenciales en texto plano, la captura de tráfico en la red expone inmediatamente el usuario y la clave. Un buzón IMAP comprometido representa una amenaza masiva para la organización: el atacante obtiene acceso no solo a las credenciales, sino a todo el historial de conversaciones de la víctima, posibilitando el robo de información confidencial, la interceptación de enlaces de restablecimiento de contraseñas de otras plataformas corporativas y la ejecución de ataques de Compromiso del Correo Corporativo (BEC - Business Email Compromise).
 
+<br>
+
 ---
 
-## 4. Protocolos y Servidores II (Protocols and Servers 2)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/87d4f9a61d3f92a761d4824b062d115e.png" width="60px" align="absmiddle">
+  <span> Protocolos y Servidores II (Protocols and Servers 2)</span>
+</h2>
 
 ### 4.1 Panorama Moderno de Ataques y la Tríada CIA frente al Modelo DAD
 La evaluación de la seguridad de cualquier infraestructura requiere analizar los activos desde la perspectiva de los tres pilares de la seguridad de la información, conocidos como la Tríada CIA:
@@ -235,6 +259,8 @@ Los ataques informáticos están diseñados para romper estos pilares, provocand
 Divulgación (Disclosure): Pérdida de confidencialidad provocada por la interceptación de datos cifrados o de texto claro.
 Alteración (Alteration): Pérdida de integridad causada por la modificación no autorizada de mensajes en tránsito.
 Destrucción (Destruction) o Denegación: Pérdida de disponibilidad provocada por ataques de Denegación de Servicio (DoS/DDoS) o borrado de datos.
+
+<br>
 
 ### 4.2 Ataques de Olfateo de Red (Sniffing) y Mitigaciones
 Un ataque de olfateo (Sniffing) consiste en el uso de herramientas de captura e inspección de paquetes de red para interceptar el tráfico que circula por la interfaz de red. Cuando un protocolo transmite información en texto claro (como HTTP, FTP, Telnet, POP3 o IMAP), un analizador de tráfico puede extraer directamente nombres de usuario, contraseñas, galletas de sesión y el contenido completo de las comunicaciones.
@@ -265,6 +291,8 @@ Autenticación basada en puerto IEEE 802.1X para impedir que dispositivos no aut
 Despliegue de una Arquitectura de Confianza Cero (Zero Trust), la cual asume que la red interna es intrínsecamente hostil y exige cifrado y autenticación en todas las comunicaciones internas.
 Monitorización activa de tablas ARP para detectar técnicas de redirección de tráfico.
 
+<br>
+
 ### 4.3 Ataques de Hombre en el Medio (MITM) y Defensas Modernas
 Un ataque Man-in-the-Middle (MITM) ocurre cuando un atacante (E) logra posicionarse de forma transparente en la vía de comunicación entre la víctima (A) y el destino legítimo (B). La víctima cree estar comunicándose directamente con el servidor, pero en realidad transmite todo su tráfico al atacante, quien puede inspeccionar el contenido (violando la confidencialidad) o modificar los datos al vuelo antes de reenviarlos al destino (violando la integridad).
 
@@ -283,6 +311,8 @@ Para contrarrestar estos ataques, la infraestructura web moderna despliega prote
 HSTS (HTTP Strict Transport Security): Cabecera HTTP que ordena al navegador conectarse de forma exclusiva mediante HTTPS durante un periodo determinado. La inclusión en listas de precarga HSTS (HSTS Preload) garantiza que el navegador nunca intente una conexión HTTP inicial.
 Transparencia de Certificados (CT): Libros mayores públicos obligatorios que registran todos los certificados emitidos por Autoridades de Certificación (CA), impidiendo la emisión oculta de certificados fraudulentos.
 Fijación de Certificados (Certificate Pinning): Técnica utilizada en aplicaciones móviles que valida que el certificado recibido coincida exactamente con la clave pública incrustada en la aplicación.
+
+<br>
 
 ### 4.4 Seguridad de la Capa de Transporte (TLS / SSL)
 El protocolo Transport Layer Security (TLS), y su antecesor obsoleto Secure Sockets Layer (SSL), proporciona la capa fundamental de seguridad criptográfica para proteger la confidencialidad e integridad del tráfico en Internet.
@@ -303,6 +333,8 @@ Para establecer un canal cifrado en TLS 1.2, el cliente envía un mensaje Client
 
 #### Evaluación de Configuraciones TLS
 Para auditar la seguridad de la configuración TLS de un servidor web se utilizan herramientas como testssl.sh (comando CLI exhaustivo ideal para redes internas), Sslyze, la plataforma web SSL Labs y el script de Nmap ssl-enum-ciphers. Los fallos más comunes incluyen la habilitación de TLS 1.0/1.1, el soporte de cifrados RC4 o CBC y el uso de certificados caducados o automandados.
+
+<br>
 
 ### 4.5 Administracion Remota Segura con Secure Shell (SSH)
 El protocolo SSH opera en el puerto TCP 22 y fue creado para reemplazar por completo a Telnet y a las utilidades rsh/rlogin, ofreciendo un canal de administración remota cifrado con garantías de autenticación, confidencialidad e integridad.
