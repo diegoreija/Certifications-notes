@@ -7,8 +7,6 @@
 
 > El reconocimiento es donde comienza todo compromiso, y este módulo cubre ambas mitades. Comenzará con técnicas pasivas que extraen registros públicos, motores de búsqueda y datos DNS sin tocar nunca el objetivo, y luego pasará a la sondeo activa con utilidades de red clásicas para mapear sistemas en vivo. A partir de ahí, trabajarás a través de los protocolos y servicios cotidianos que mantienen las redes en funcionamiento, aprendiendo cómo se comporta cada uno y cómo los atacantes vuelven sus peculiaridades en su contra.
 
-<br>
-
 ---
 
 <br>
