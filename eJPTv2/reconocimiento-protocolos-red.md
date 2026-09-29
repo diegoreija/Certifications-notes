@@ -1,5 +1,7 @@
-# 🛡️ GUÍA COMPLETA DE RECONOCIMIENTO Y PROTOCOLOS DE RED
-### *Manual Extensivo y Guía de Consulta para Exámenes y Auditorías – Certificación eJPT*
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/network-reconnaissance-1778908506629.svg" width="70px" align="absmiddle">
+  <span> NETWORK RECONNAISSANCE</span>
+</h1>
 
 ---
 
@@ -21,14 +23,23 @@
 | **Administración Remota SSH** | Puerto TCP 22 | `ssh`, `ssh-keygen`, `sftp`, `rsync` | Autenticación mediante claves públicas (Ed25519/RSA), verificación de `known_hosts`, trasferencia segura de archivos y endurecimiento de `sshd_config`. |
 | **Ataques a Contraseñas** | `hydra -l user -P wordlist.txt IP service` | THC Hydra, Medusa, Ncrack, RockYou | Fuerza bruta y ataques de diccionario sobre servicios de red (SSH, FTP, POP3, IMAP, HTTP-POST) y mitigaciones con MFA o políticas de bloqueo. |
 
+<br>
+
 ---
 
-## 1. Reconocimiento Pasivo (Passive Reconnaissance)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <span> Reconocimiento Pasivo (Passive Reconnaissance)</span>
+</h2>
 
 ### 1.1 Introducción y Diferencia entre Reconocimiento Pasivo y Activo
 El reconocimiento representa la fase inicial indispensable en cualquier auditoría de seguridad o prueba de penetración, posicionándose como el primer eslabón en marcos de ataque metodológicos como la Cadena de Destrucción Cibernética (Cyber Kill Chain) y la Cadena de Destrucción Unificada (Unified Kill Chain). La premisa operativa expresada históricamente en el Arte de la Guerra se traduce directamente a la ciberseguridad: el auditor debe comprender detalladamente la superficie expuesta del objetivo antes de planificar cualquier interacción. Desde la perspectiva del equipo de defensa (Blue Team), entender qué información es accesible de forma pública permite reducir la huella expuesta y mitigar vectores de entrada antes de que sean explotados.
 
 La distinción entre el reconocimiento pasivo y el activo radica en la interacción directa con la infraestructura objetivo. El reconocimiento pasivo se fundamenta de forma exclusiva en la recolección de inteligencia a partir de fuentes públicas y registros abiertos, sin transmitir un solo paquete de red a los servidores del objetivo. Esta metodología es equivalente a observar un edificio a distancia con binoculares sin pisar su propiedad. Al no generar tráfico directo, el reconocimiento pasivo es indetectable por los sistemas de monitorización del objetivo como cortafuegos, Sistemas de Detección de Intrusiones (IDS) o Firewalls de Aplicación Web (WAF), minimizando los riesgos legales y operativos. Por el contrario, el reconocimiento activo implica interactuar directamente con los sistemas, enviando sondas y paquetes para descubrir hosts vivos, puertos abiertos y servicios, lo que genera registros de auditoría y posibles alertas de seguridad. Cabe destacar que cualquier interacción directa con el personal de la organización, incluso a través de conversaciones informales o ingeniería social presencial, se clasifica rigurosamente como reconocimiento activo debido al contacto directo establecido.
+
+<br>
 
 ### 1.2 Protocolo WHOIS y la Transición hacia RDAP
 El protocolo WHOIS, definido en el RFC 3912, opera tradicionalmente en el puerto TCP 43 mediante un esquema de consulta y respuesta simple. Cuando se registra un nombre de dominio, el registrador almacena información detallada que puede ser consultada públicamente. Entre los datos clave que proporciona una consulta WHOIS se encuentran la empresa registradora (como Namecheap o GoDaddy), los datos de contacto del registrante, las fechas críticas de creación, última actualización y caducidad, los servidores de nombres autorizados para el dominio, los códigos de estado del dominio (como clientTransferProhibited, que impide transferencias no autorizadas) y los contactos designados para el reporte de abusos.
@@ -37,34 +48,51 @@ A pesar de su utilidad histórica, la disponibilidad de datos personales en cons
 
 Como hito fundamental en la gobernanza de Internet, la ICANN suspendió oficialmente el protocolo tradicional WHOIS el 28 de enero de 2025 para dominios genéricos de primer nivel (gTLD), sustituyéndolo obligatoriamente por el Protocolo de Acceso a Datos de Registro (RDAP). RDAP constituye el sucesor moderno de WHOIS al funcionar sobre HTTPS en lugar de texto plano, devolver respuestas en formato JSON estructurado y legible por máquina, ofrecer soporte nativo para internacionalización e integrar controles de acceso diferenciados para cumplir con las normativas de protección de datos. Para consultar registros RDAP desde la línea de comandos, se utilizan herramientas como curl combinadas con procesadores JSON como jq, o clientes especializados como OpenRDAP, obteniendo datos estructurados directamente de las entidades autorizadas.
 
+<br>
+
 ### 1.3 Consultas de Registros DNS con nslookup y dig
 El Sistema de Nombres de Dominio (DNS) es una base de datos distribuida que traduce nombres de dominio legibles por humanos en direcciones IP numéricas. Las consultas DNS representan una técnica de reconocimiento completamente pasiva, ya que las peticiones se dirigen a solucionadores recursivos públicos o abiertos (como Cloudflare 1.1.1.1 o Google 8.8.8.8) en lugar de consultar directamente los servidores del objetivo. El uso de solucionadores públicos cifrados mediante DNS sobre HTTPS (DoH) o DNS sobre TLS (DoT) evita además que el proveedor de servicios de Internet (ISP) registre la actividad de búsqueda del auditor.
 
 Entre las herramientas de consulta destacan nslookup y dig. Aunque nslookup es una utilidad clásica presente por compatibilidad en sistemas Windows y entornos heredados, la herramienta estándar y recomendada en auditorías profesionales es dig (Domain Information Groper). Dig proporciona una salida limpia, muestra el tiempo de vida en caché (TTL) de cada registro y permite redactar scripts de automatización con mayor fiabilidad. Los tipos de registros DNS más relevantes durante el reconocimiento incluyen las entradas A (direcciones IPv4), AAAA (direcciones IPv6), CNAME (alias que apuntan un dominio a otro nombre canónico), MX (servidores de correo con sus valores de prioridad donde números menores indican mayor preferencia), SOA (Inicio de Autoridad con el correo del administrador y número de serie de la zona) y TXT (registros de texto arbitrario empleados masivamente para autenticación de correo con SPF, DKIM y DMARC, así como para la verificación de propiedad de dominios).
+
+<br>
 
 ### 1.4 Descubrimiento de Subdominios y la Plataforma DNSDumpster
 Las consultas DNS tradicionales mediante dig o nslookup solo responden sobre nombres de host que el auditor ya conoce. Sin embargo, las organizaciones suelen mantener una amplia variedad de subdominios que no están anunciados públicamente, como entornos de desarrollo, portales internos, APIs heredadas o instalaciones olvidadas de gestores de contenido (TI en la sombra). Estos subdominios representan una superficie de ataque crítica, ya que suelen presentar configuraciones defensivas más débiles que el sitio web principal.
 
 DNSDumpster es una plataforma pública y gratuita de OSINT que permite descubrir subdominios de forma totalmente pasiva. En lugar de utilizar ataques de fuerza bruta que enviarían miles de peticiones al objetivo, DNSDumpster recopila y agrega datos de fuentes públicas, incluyendo cachés de motores de búsqueda, bases de datos de transferencias de zona públicas y registros de certificados SSL/TLS. La plataforma no solo enumera los subdominios encontrados con sus respectivas direcciones IP y ubicaciones geográficas, sino que también genera mapas visuales que ilustran las relaciones entre los dominios, los servidores de correo MX y la infraestructura de red subyacente.
 
+<br>
+
 ### 1.5 Registros de Transparencia de Certificados (Certificate Transparency - CT Logs)
 La técnica más potente y completa para el descubrimiento pasivo de subdominios en la actualidad consiste en la consulta de los Registros de Transparencia de Certificados (CT Logs). La Transparencia de Certificados es un marco público e idóneo de auditoría implementado de forma obligatoria para las Autoridades de Certificación (CA). Cada vez que una CA emite un certificado SSL/TLS para un dominio o subdominio, el certificado debe registrarse obligatoriamente en un libro mayor público e inalterable.
 
 Cada certificado digital contiene un campo denominado Nombre Alternativo del Sujeto (SAN - Subject Alternative Name), el cual lista explícitamente todos los subdominios e infraestructura cubierta por dicha firma criptográfica. A través de plataformas web como crt.sh, un auditor puede buscar mediante comodines (por ejemplo, %.dominio.com) y obtener un listado histórico de cada certificado emitido para la organización. Esta técnica funciona en tiempo real, no requiere enviar ningún paquete a la red objetivo y suele revelar de diez a cien veces más subdominios que las búsquedas DNS convencionales, exponiendo con frecuencia infraestructura interna o en pruebas.
+
+<br>
 
 ### 1.6 Censo de Dispositivos Conectados con Shodan.io y Censys
 Shodan.io es un motor de búsqueda especializado que escanea continuamente la totalidad del direccionamiento IPv4 e IPv6 público, recopilando e indexando las respuestas y banners expuestos en los puertos abiertos de cualquier dispositivo conectado. A diferencia de motores de búsqueda tradicionales como Google, que indexan contenido web HTML, Shodan indexa infraestructura: servidores web, bases de datos, routers, dispositivos de IoT, cámaras de seguridad y sistemas de control industrial (ICS/SCADA).
 
 Durante la fase de reconocimiento pasivo, consultar Shodan permite obtener una radiografía completa de los activos de una organización sin tocar su red. Al ingresar una dirección IP, un rango o un nombre de dominio, Shodan devuelve el número de sistema autónomo (ASN), el proveedor de alojamiento o nube (como AWS, Azure o Cloudflare), la ubicación geográfica, la lista de puertos abiertos con sus respectivos banners de versión y etiquetas automáticas de vulnerabilidad (como la presencia de exploits conocidos asociados al software detectado). Shodan admite filtros de búsqueda avanzados como hostname:dominio.com, org:"Nombre Empresa", port:443 o http.component:"wordpress". Como alternativa o complemento, la plataforma Censys.io ofrece capacidades similares de análisis de infraestructura y certificados digitales para cotejar hallazgos.
 
+<br>
+
 ---
 
-## 2. Reconocimiento Activo (Active Reconnaissance)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574230785" width="60px" align="absmiddle">
+  <span> Reconocimiento Activo (Active Reconnaissance)</span>
+</h2>
 
 ### 2.1 Introducción y Consideraciones de Riesgo
 El reconocimiento activo marca la transición hacia la interacción directa con los sistemas, aplicaciones e infraestructura del objetivo. A diferencia de las técnicas pasivas, el reconocimiento activo exige transmitir paquetes de red, establecer conexiones TCP/UDP y sondear servicios en escucha. La consecuencia directa de esta interacción es la generación inevitable de huellas digitales en forma de registros de acceso en servidores web, eventos en cortafuegos, bloqueos en Firewalls de Aplicación Web (WAF), alertas en Sistemas de Detección y Prevención de Intrusiones (IDS/IPS) y eventos en plataformas SIEM o soluciones de detección en el endpoint (EDR).
 
 Debido a su naturaleza detectable y al riesgo de causar interrupciones en servicios de producción, el reconocimiento activo exige estrictamente disponer de una autorización legal por escrito (como un contrato de prueba de penetración con un alcance claramente delimitado o los términos de un programa de Bug Bounty). El sondeo no autorizado de redes es ilegal en la mayoría de las jurisdicciones. En el contexto defensivo, las organizaciones monitorizan sus perímetros para identificar patrones de escaneo temprano, mientras que desde la perspectiva del equipo de ataque (Red Team), el objetivo principal radica en camuflar las sondas dentro del tráfico legítimo de la red, emulando el comportamiento de usuarios reales mediante el ajuste de velocidad, el uso de agentes de usuario realistas y la distribución de peticiones.
+
+<br>
 
 ### 2.2 Reconocimiento mediante Navegador Web y Herramientas de Desarrollador
 El navegador web es una de las herramientas de reconocimiento activo más efectivas y menos sospechosas, ya que su tráfico se confunde de manera natural con las miles de peticiones de usuarios legítimos. Los navegadores se conectan por defecto al puerto TCP 80 para tráfico HTTP sin cifrar y al puerto TCP 443 para tráfico HTTPS cifrado con TLS. En aplicaciones modernas, es común encontrar el uso de HTTP/3 ejecutado sobre el protocolo QUIC, el cual combina TCP y TLS sobre el puerto UDP 443 para acelerar la conexión. Es posible sondear servicios en puertos no estándar especificando el puerto directamente en la URL del navegador.
@@ -76,6 +104,8 @@ La pestaña Fuentes (Sources o Debugger) permite inspeccionar los archivos HTML,
 La pestaña Aplicación (Application o Storage) permite auditar las cookies de sesión, el almacenamiento local (LocalStorage) y de sesión (SessionStorage), donde pueden residir tokens JWT o credenciales.
 La pestaña Seguridad (Security) expone los detalles del certificado digital TLS y sus nombres alternativos (SAN).
 
+<br>
+
 ### 2.3 Extensiones del Navegador para Identificación de Tecnologías
 El uso de extensiones especializadas transforma el navegador en una plataforma de reconocimiento avanzada. FoxyProxy facilita el conmutado rápido de tráfico entre diferentes proxies de interceptación como Burp Suite, OWASP ZAP o túneles SOCKS5. User-Agent Switcher and Manager permite alterar la cadena de agente de usuario para emular navegadores móviles u otros sistemas operativos, lo que ayuda a descubrir puntos finales específicos para dispositivos móviles o comportamientos condicionales en el servidor. Wappalyzer e identificadores similares como BuiltWith, WhatRuns o Library Detector analizan pasivamente las respuestas de la página para identificar automáticamente el gestor de contenidos (CMS), la versión del servidor web, los marcos de trabajo de JavaScript (como React o Angular), las bibliotecas cliente y las herramientas de analítica utilizadas por el objetivo.
 
@@ -86,10 +116,14 @@ Además de confirmar la conectividad y medir la latencia de red, el análisis de
 
 Si el comando ping no recibe respuesta y muestra un 100% de pérdida de paquetes, no significa necesariamente que el host esté apagado. Las razones más comunes para la falta de respuesta incluyen el bloqueo de peticiones ICMP por cortafuegos locales (el Firewall de Windows bloquea ping por defecto), la filtración de ICMP por parte de proveedores de nube (AWS, Azure, GCP), la presencia de WAFs o CDNs, o la existencia de reglas de red que descartan paquetes ICMP salientes o entrantes.
 
+<br>
+
 ### 2.5 Trazado de Rutas de Red con Traceroute y MTR
 El comando traceroute (tracert en Windows) permite mapear la topología de la red identificando las direcciones IP de los enrutadores intermedios (saltos) situados entre el equipo del auditor y el destino. Debido a que no existe un comando directo para solicitar la ruta completa a una red, traceroute explota de forma ingeniosa el campo TTL de los paquetes IP. La herramienta envía una secuencia de paquetes incrementando el TTL comenzando en 1. Cuando el primer enrutador recibe el paquete con TTL=1, decrementa el valor a 0, descarta el paquete y devuelve al emisor un mensaje ICMP Time Exceeded (Tipo 11, Código 0). Incrementando el TTL a 2, se fuerza al segundo enrutador a responder, y así sucesivamente hasta alcanzar el destino final.
 
 En sistemas Linux, traceroute envía datagramas UDP por defecto a puertos altos no estándar. Para eludir cortafuegos que bloqueen UDP, se puede forzar el uso de sondas TCP mediante el parámetro traceroute -T o sondas ICMP mediante traceroute -I. Cuando un enrutador está configurado para no responder a paquetes de tiempo excedido, la salida muestra asteriscos (*). Es fundamental comprender que las rutas de red no son estáticas; el uso de enrutamiento dinámico (BGP, OSPF), balanceadores de carga y redes CDN (como Cloudflare) provoca que los paquetes sigan rutas distintas incluso en ejecuciones consecutivas del comando. Para una monitorización dinámica en tiempo real se utiliza la herramienta mtr (My Traceroute), la cual combina la funcionalidad de traceroute y ping en una sola interfaz interactiva.
+
+<br>
 
 ### 2.6 Captura de Banners e Interacción con Telnet y Netcat
 El protocolo TELNET, diseñado originalmente en 1969 para la administración remota en el puerto TCP 23, transmite absolutamente todos los datos en texto claro sin cifrado. Por esta razón, ha sido reemplazado por SSH. Sin embargo, el cliente telnet de la línea de comandos sigue siendo una herramienta de reconocimiento muy útil para realizar la técnica conocida como captura de banners (Banner Grabbing). Dado que telnet establece conexiones TCP crudas, es posible conectarse a cualquier puerto TCP en escucha e interactuar manualmente con el servicio.
