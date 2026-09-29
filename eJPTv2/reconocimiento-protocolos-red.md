@@ -5,23 +5,9 @@
 
 ---
 
-> **Estructura del Manual:** Organizado estrictamente en orden cronológico según los contenidos oficiales de TryHackMe y las notas de Notion. Cubre desde las fases iniciales de recolección de inteligencia pública y sondeo activo hasta la anatomía interna de los protocolos de red tradicionales, sus vulnerabilidades de texto claro, los vectores de ataque en tránsito y la implementación de mecanismos modernos de cifrado y autenticación.
+> El reconocimiento es donde comienza todo compromiso, y este módulo cubre ambas mitades. Comenzará con técnicas pasivas que extraen registros públicos, motores de búsqueda y datos DNS sin tocar nunca el objetivo, y luego pasará a la sondeo activa con utilidades de red clásicas para mapear sistemas en vivo. A partir de ahí, trabajarás a través de los protocolos y servicios cotidianos que mantienen las redes en funcionamiento, aprendiendo cómo se comporta cada uno y cómo los atacantes vuelven sus peculiaridades en su contra.
 
 ---
-
-## 🚀 Matriz de Consulta Rápida (Cheat Sheet de Reconocimiento y Protocolos)
-
-| Fase / Protocolo | Puerto / Comando Clave | Herramientas Principales | Indicadores y Propósito de Auditoría |
-| :--- | :--- | :--- | :--- |
-| **Reconocimiento Pasivo** | `whois domain`, `dig domain MX`, `crt.sh` | WHOIS, RDAP, dig, DNSDumpster, Shodan | Identificar registros de dominio, subdominios ocultos, SANs de certificados y exposición en Shodan sin enviar paquetes al objetivo. |
-| **Reconocimiento Activo** | `ping -c 4 IP`, `traceroute -T IP`, `nc -vnlp 4444` | Navegador, DevTools, Ping, Traceroute, Netcat | Detectar hosts activos, estimar SO por TTL (Linux ~64, Windows ~128), mapear saltos de red e inspeccionar banners de servicios. |
-| **Protocolo HTTP / HTTPS** | Puerto 80 (HTTP), 443 (HTTPS) | Telnet, Netcat, Curl, Burp Suite | Peticiones manuales `GET / HTTP/1.1`, identificación de cabeceras de servidor (`Server:`, `X-Powered-By`) y auditoría de certificados TLS. |
-| **Protocolo FTP / FTPS / SFTP** | Puerto 21 (FTP), 22 (SFTP), 990 (FTPS) | Cliente FTP, Telnet, Netcat, FileZilla | Autenticación en texto plano, comprobación de acceso anónimo (`anonymous`), modo activo vs pasivo y transferencia de archivos. |
-| **Protocolos de Correo (SMTP/POP3/IMAP)** | Ports 25/587 (SMTP), 110/995 (POP3), 143/993 (IMAP) | Telnet, Netcat, Thunderbird | Envío manual de correos, comprobación de relés abiertos, suplantación de identidad (Spoofing) y captura de credenciales en tránsito. |
-| **Olfateo e Intercepción (Sniffing / MITM)** | `tcpdump -i any port 110 -A`, `bettercap` | Tcpdump, Wireshark, Bettercap, Responder | Captura de credenciales en texto claro, ARP Spoofing, DNS Spoofing y degradación de cifrado (SSL Stripping). |
-| **Seguridad de Capa de Transporte (TLS)** | Puertos dedicados o STARTTLS | `testssl.sh`, Sslyze, SSL Labs, Nmap | Verificación de suites de cifrado, versiones soportadas (TLS 1.2/1.3), vigencia de certificados y configuración HSTS. |
-| **Administración Remota SSH** | Puerto TCP 22 | `ssh`, `ssh-keygen`, `sftp`, `rsync` | Autenticación mediante claves públicas (Ed25519/RSA), verificación de `known_hosts`, trasferencia segura de archivos y endurecimiento de `sshd_config`. |
-| **Ataques a Contraseñas** | `hydra -l user -P wordlist.txt IP service` | THC Hydra, Medusa, Ncrack, RockYou | Fuerza bruta y ataques de diccionario sobre servicios de red (SSH, FTP, POP3, IMAP, HTTP-POST) y mitigaciones con MFA o políticas de bloqueo. |
 
 <br>
 
