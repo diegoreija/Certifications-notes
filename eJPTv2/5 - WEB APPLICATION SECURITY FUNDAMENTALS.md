@@ -1,9 +1,11 @@
-# 🛡️ DESCUBRIMIENTO DE CONTENIDO, STACKS WEB Y ATAQUES A SERVIDORES WEB
-### *Manual Extensivo y Guía de Referencia Técnica – Certificación eJPT*
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/web-application-security-fundamentals-1778910570331.svg" width="70px" align="absmiddle">
+  <span> WEB APPLICATION SECURITY FUNDAMENTALS</span>
+</h1>
 
 ---
 
-> **Estructura del Manual:** Este documento organiza y sintetiza de forma exhaustiva los contenidos de los cuatro módulos seleccionados en estricto orden cronológico: Descubrimiento de Contenido, Stacks Web Modernos, Ataques a Servidores Web I (Linux / Entornos tradicionales y modernos) y Ataques a Servidores Web II (Microsoft IIS / Entornos Windows). Toda la guía está redactada en texto narrativo continuo sin listas de viñetas fuera de bloques de código o tablas, con los títulos principales de cada fuente traducidos al español como encabezados de nivel dos (`##`) y los subapartados como nivel tres (`###`), proporcionando todo el contexto técnico, comandos, desgloses de vulnerabilidades, archivos de configuración y procedimientos de explotación para consultar durante exámenes o pruebas de penetración.
+> Este módulo abre su viaje de pruebas de aplicaciones web enseñándole a caminar a través de un objetivo de la forma en que lo hace un atacante, mostrando las páginas ocultas, directorios y archivos que los usuarios comunes nunca ven. Luego profundizará en las pilas modernas que impulsan los sitios de hoy en día, entendiendo cómo los marcos de frontend, las API y las tecnologías de backend introducen cada uno su propia superficie de ataque. Al final, estarás ejecutando prácticos ataques al servidor web y leyéndolos a través de la lente de un pentester.
 
 ---
 
@@ -27,7 +29,12 @@
 
 ---
 
-## 1. Descubrimiento de Contenido (Content Discovery)
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Descubrimiento de Contenido (Content Discovery)</span>
+</h2>
 
 ### 1.1 Descubrimiento Manual y Archivos Comunes
 El descubrimiento de contenido es la fase del reconocimiento donde el auditor identifica páginas, directorios, archivos ocultos y componentes del lado del servidor que no están enlazados directamente en el menú de navegación principal de la aplicación web. El primer paso de este proceso debe realizarse siempre de manera manual examinando aquellos archivos que los servidores web exponen por pura convención técnica.
@@ -40,10 +47,14 @@ Los favicons son pequeños iconos asociados a los sitios web que se guardan en l
 
 Asimismo, la comprobación manual debe incluir la búsqueda de archivos de configuración y archivos ocultos conocidos como dotfiles. Entre los más críticos se encuentran `.git` (que permite reconstruir todo el código fuente del proyecto si el directorio está expuesto), `.env` (que almacena credenciales de bases de datos y claves secretas de API), `.htaccess` (que revela reglas de reescritura de URLs y restricciones de acceso en servidores Apache), `.DS_Store` (generado por sistemas macOS exponiendo nombres de archivos locales) y copias de seguridad con extensiones `.bak`, `.old`, `.swp` o `.zip`.
 
+<br>
+
 ### 1.2 Encabezados HTTP y Tecnologías (Headers & Framework Stack)
 La inspección manual de la interacción HTTP proporciona pistas sobre la pila tecnológica que sostiene la aplicación web. Al examinar las cabeceras de respuesta HTTP devueltas por el servidor a través de herramientas de línea de comandos como `curl -I http://TARGET/` o mediante las herramientas de desarrollo del navegador, el auditor debe analizar cabeceras como `Server:` (que revela el software de servidor web y su versión, como `Apache/2.4.41` o `nginx/1.18.0`), `X-Powered-By:` (que indica el lenguaje o framework backend como `PHP/8.1.2`, `Express` o `ASP.NET`) y cabeceras específicas de frameworks como `X-Drupal-Cache` o `X-Generator`.
 
 La provocación deliberada de páginas de error predeterminadas (por ejemplo, solicitando una ruta inexistente como `/ruta_ficticia_12345` o enviando peticiones con sintaxis malformada) fuerza al servidor a responder con plantillas de error 404 o 500 que con frecuencia contienen firmas del servidor, versiones exactas del middleware y trazas de pila que revelan la estructura interna de los directorios del servidor.
+
+<br>
 
 ### 1.3 OSINT, Buscadores y Herramientas Web
 El reconocimiento pasivo mediante inteligencia de fuentes abiertas (OSINT) permite descubrir contenido expuesto sin enviar un solo paquete directamente a la infraestructura objetivo. Google Hacking, o Google Dorking, utiliza operadores de búsqueda avanzados para consultar el índice del buscador. Entre los operadores más efectivos destacan `site:dominio.com` (para limitar los resultados al objetivo), `filetype:pdf` o `ext:php` (para filtrar por tipos de archivo específicos), `inurl:admin` (para localizar parámetros o rutas administrativas), `intitle:"index of"` (para encontrar servidores con listado de directorios habilitado) e `intext:"sql syntax error"` (para descubrir páginas que exponen errores técnicos).
@@ -52,12 +63,16 @@ Extensiones de navegador como Wappalyzer y BuiltWith analizan de forma pasiva el
 
 Por otro lado, los repositorios y archivos históricos proporcionan acceso a contenido que fue eliminado de la aplicación activa pero que permanece archivado externamente. La plataforma Wayback Machine (`web.archive.org`) conserva capturas históricas del sitio web, lo que permite descubrir endpoints antiguos, comentarios de código olvidados o antiguos paneles de acceso. La búsqueda en GitHub mediante palabras clave relacionadas con el dominio del cliente permite localizar repositorios públicos de desarrolladores donde se hayan filtrado por accidente credenciales o código fuente. Finalmente, la búsqueda de contenedores de almacenamiento en la nube, como AWS S3 Buckets (`http://nombre-empresa.s3.amazonaws.com`), permite identificar depósitos de archivos públicos mal configurados que almacenan datos confidenciales o copias de seguridad.
 
+<br>
+
 ### 1.4 Descubrimiento Automatizado con Gobuster
 Cuando el descubrimiento manual y el análisis OSINT concluyen, se utiliza el descubrimiento automatizado mediante técnicas de fuerza bruta y fuzzing. Estas herramientas envían miles de peticiones HTTP probando listas de palabras predefinidas (wordlists) contra el servidor web para identificar rutas válidas basadas en las respuestas HTTP obtenidas.
 
 Gobuster es una de las herramientas de descubrimiento automatizado más rápidas del sector, desarrollada en Go para ejecutar peticiones concurrentes mediante hilos. El diccionario utilizado determina el éxito de la auditoría; repositorios como SecLists proporcionan diccionarios especializados como `directory-list-2.3-medium.txt` o `common.txt`.
 
 El modo de descubrimiento de directorios de Gobuster se ejecuta mediante el comando `dir`. Una sintaxis completa y optimizada para auditorías reales es `gobuster dir -u http://TARGET/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,txt,html,bak -t 50 -b 404,403`. En este comando, la opción `-u` especifica la URL objetivo, `-w` define la ruta del diccionario, `-x` añade extensiones de archivo que se concatenan a cada palabra probada, `-t 50` establece el número de hilos concurrentes para acelerar la velocidad de escaneo, y `-b 404,403` excluye códigos de estado HTTP específicos para reducir el ruido en los resultados devueltos.
+
+<br>
 
 ### 1.5 Subdominios y Hosts Virtuales (Virtual Hosts / Vhosts)
 Las aplicaciones web corporativas rara vez residen en un único dominio raíz. El descubrimiento de infraestructura requiere identificar subdominios y hosts virtuales asociados.
@@ -70,12 +85,20 @@ Gobuster permite realizar fuerza bruta sobre ambos entornos. Para descubrir subd
 
 ---
 
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Stacks Web Modernos (Modern Web Stacks)</span>
+</h2>
 ## 2. Stacks Web Modernos (Modern Web Stacks)
 
 ### 2.1 Identificación y Huella Digital de Stacks Web
 Un stack o pila web es el conjunto de tecnologías compuestas por el sistema operativo, servidor web, base de datos, lenguaje backend y framework frontend que sustentan una aplicación. Durante una auditoría de seguridad de tiempo limitado, la velocidad de identificación de la pila web es un factor determinante. Descubrir la tecnología exacta y su versión permite al auditor dirigirse inmediatamente a los vectores de ataque y CVEs conocidos, evitando perder tiempo ejecutando escaneos genéricos.
 
 Cada pila web filtra su identidad a través de señales observables en las respuestas HTTP: nombres de cookies de sesión, estructuras de archivos estáticos, encabezados personalizados, formatos de respuesta JSON y errores de tiempo de ejecución. El flujo de trabajo profesional para evaluar cualquier pila consta de tres pasos secuenciales: primero, realizar la huella digital (fingerprinting) a partir de las señales de respuesta HTTP sin enviar payloads agresivos; segundo, confirmar la versión exacta e identificar los CVEs aplicables en bases de datos de vulnerabilidades; y tercero, ejecutar la cadena de explotación comprendiendo la causa raíz de la falla de código.
+
+<br>
 
 ### 2.2 Pila MERN (MongoDB, Express, React, Node.js)
 La pila MERN representa una de las arquitecturas JavaScript de extremo a extremo más populares en el desarrollo moderno. Está compuesta por MongoDB como base de datos NoSQL orientada a documentos, Express.js como framework de servidor web para Node.js, React como librería cliente para la interfaz de usuario, y Node.js como entorno de ejecución en el servidor.
@@ -84,6 +107,8 @@ La huella digital de la pila MERN se realiza observando señales distintivas. En
 
 Los vectores de ataque en la pila MERN suelen centrarse en la capa de datos y servidor. Dado que MongoDB no utiliza SQL, es inmune a las inyecciones SQL tradicionales; sin embargo, es altamente vulnerable a inyecciones NoSQL cuando la aplicación procesa entradas de usuario en formato JSON directamente en las consultas de la base de datos. Un atacante puede enviar un objeto JSON manipulado con operadores relacionales de MongoDB como `{"username": {"$ne": null}, "password": {"$ne": null}}`. Al evaluar el operador `$ne` (no igual), la consulta se vuelve verdadera para cualquier registro, permitiendo la anulación de autenticación y la emisión de tokens JWT autorizados. Asimismo, las aplicaciones Node.js pueden ser vulnerables a la deserialización insegura de objetos cuando utilizan paquetes de análisis de datos no seguros.
 
+<br>
+
 ### 2.3 React / Next.js
 Next.js es el framework de producción estándar para React que introduce renderizado del lado del servidor (SSR), generación de sitios estáticos (SSG) y componentes de servidor de React (RSC). Su arquitectura redefine la interacción entre cliente y servidor mediante protocolos de hidratación de datos.
 
@@ -91,12 +116,16 @@ La huella digital de Next.js se confirma mediante la cabecera HTTP de respuesta 
 
 Una de las vulnerabilidades críticas más relevantes en esta arquitectura es el desvío de controles de seguridad en capas intermedias, ejemplificado en la vulnerabilidad CVE-2025-29927 (Next.js Middleware Bypass). En aplicaciones Next.js, los desarrolladores utilizan archivos de middleware (`middleware.js`) para verificar tokens de sesión y redirigir usuarios no autorizados antes de entregar rutas protegidas como `/admin`. La falla de la vulnerabilidad reside en que el enrutador interno de Next.js confía de manera implícita en cabeceras de subpetición internas como `x-middleware-subrequest`. Un atacante externo puede inyectar la cabecera `x-middleware-subrequest: 1` en su petición HTTP dirigida a `/admin`. Al recibir esta cabecera, el servidor asume erróneamente que la petición ya fue procesada y validada por la capa de middleware, omitiendo los controles de autenticación y entregando la interfaz administrativa protegida directamente al atacante.
 
+<br>
+
 ### 2.4 Django (Python Framework)
 Django es un framework web de alto nivel escrito en Python que promueve un desarrollo rápido y un diseño limpio siguiendo el patrón Modelo-Vista-Plantilla (MVT). Incluye componentes integrados como un sistema ORM (Mapeo Relacional de Objetos), un panel de administración automatizado y mecanismos de protección contra ataques comunes.
 
 La huella digital de Django se efectúa identificando la cookie de protección contra CSRF nombrada obligatoriamente `csrftoken` y la cookie de sesión `sessionid`. El acceso a la ruta `/admin/` despliega la interfaz de inicio de sesión distintiva de Django Admin. Si la aplicación está configurada en modo de depuración con la variable `DEBUG = True` en producción, el envío de peticiones malformadas o rutas inexistentes genera páginas de error detalladas (Django Debug Pages) que exponen las rutas internas del proyecto, variables de entorno, configuraciones de base de datos e información del sistema operativo.
 
 A pesar de que el ORM de Django parametriza las consultas por defecto, la mala utilización de métodos de consulta internos puede introducir fallas críticas de inyección SQL, como demuestra la vulnerabilidad CVE-2021-35042. Esta falla afecta a las versiones de Django donde la entrada del usuario se pasa directamente al método de ordenación `.order_by()` de un QuerySet. En lugar de tratar el parámetro de entrada como un simple nombre de columna, el motor de Django concatenaba la entrada en la instrucción SQL `ORDER BY` resultante sin la debida desinfección. Un atacante puede enviar un parámetro como `http://TARGET/products/?order=vulnerable_col;SELECT%20pg_sleep(5)` o inyectar subconsultas SQL completas, logrando la ejecución de comandos SQL arbitrarios y la exfiltración de la base de datos a través del ORM.
+
+<br>
 
 ### 2.5 Pila LAMP (Linux, Apache, MySQL, PHP)
 La pila LAMP es la arquitectura tradicional sobre la que se han construido millones de aplicaciones web y gestores de contenido como WordPress, Joomla y Drupal. Está formada por el sistema operativo Linux, el servidor web Apache, la base de datos MySQL o MariaDB y el lenguaje de programación interpretado PHP.
@@ -107,8 +136,16 @@ Una de las vulnerabilidades más destructivas descubiertas en la pila LAMP es CV
 
 Un atacante puede enviar una petición utilizando la secuencia `.%%32%65/` o `.%2e/` (donde `%32%65` y `%2e` corresponden al punto codificado en hexadecimal). Al solicitar la URL `curl -s --path-as-is "http://TARGET/icons/.%2e/.%2e/.%2e/.%2e/etc/passwd"`, la solicitud se salta las restricciones del directorio asignado y lee cualquier archivo del sistema operativo. Además, si el módulo CGI de Apache (`mod_cgi`) está habilitado en el servidor, el atacante puede transformar la lectura de archivos en Ejecución Remota de Código (RCE) enviando una petición `POST` hacia la ruta binaria del servidor como `/cgi-bin/%%32%65%%32%65/%%32%65%%32%65/bin/sh` e incluyendo comandos de consola en el cuerpo de la petición HTTP, logrando la ejecución inmediata de comandos en el servidor.
 
+<br>
+
 ---
 
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Ataques a Servidores Web I (Web Server Attacks - I)</span>
+</h2>
 ## 3. Ataques a Servidores Web I (Web Server Attacks - I)
 
 ### 3.1 Identificación y Reconocimiento de Servidores Web
@@ -116,12 +153,16 @@ La auditoría de servidores web orientada a la infraestructura Linux abarca tant
 
 La identificación se realiza combinando la lectura de encabezados HTTP (`Server:`, `X-Powered-By:`), el análisis de la estructura de rutas en las herramientas de desarrollo del navegador (`DevTools`) y la observación de las respuestas ante recursos inexistentes.
 
+<br>
+
 ### 3.2 Servidor HTTP Integrado de Python
 El servidor HTTP integrado de Python se ejecuta habitualmente mediante el comando `python3 -m http.server 8000`. Es una herramienta diseñada para transferencias temporales de archivos o pruebas de desarrollo rápido, por lo que carece por completo de mecanismos de seguridad, autenticación o control de acceso.
 
 Cuando este servidor se ejecuta en un directorio de trabajo del sistema, habilita por defecto el listado automático de directorios (Directory Listing). Cualquier usuario que navegue a la dirección IP y puerto correspondientes obtendrá un índice interactivo del sistema de archivos local.
 
 Entre los vectores de información expuestos en este entorno destaca el acceso directo a archivos ocultos que empiezan por punto (dotfiles). El navegador o el auditor pueden acceder a archivos como `.env` (extraiendo credenciales de bases de datos), `.git/config` (revelando URLs de repositorios privados) y `.bash_history` (obteniendo comandos ejecutados previamente por el administrador). Además, es muy habitual encontrar archivos comprimidos almacenados temporalmente como `backup.tar.gz`, `site_dump.zip` o `db_export.sql`. El auditor debe descargar e inspeccionar estos archivos en su máquina local para recuperar código fuente, claves privadas SSH (`id_rsa`) y contraseñas en texto plano.
+
+<br>
 
 ### 3.3 Servidor Web Apache2
 Apache2 es el servidor web de código abierto tradicional más desplegado en entornos Linux. Su configuración por defecto y la activación no controlada de módulos internos pueden exponer información sensible.
@@ -132,6 +173,8 @@ Una de las configuraciones erróneas más críticas es la exposición del módul
 
 Para descubrir archivos y scripts desvinculados del menú de navegación en servidores Apache, se utiliza Gobuster configurado con extensiones específicas como `.php`, `.phtml`, `.conf` y `.htaccess`.
 
+<br>
+
 ### 3.4 Node.js y Framework Express
 Las aplicaciones construidas sobre Node.js utilizando el framework Express presentan comportamientos dinámicos donde las rutas no se corresponden con archivos físicos del sistema de archivos, sino con funciones controladoras definidas en el código.
 
@@ -141,6 +184,8 @@ Cuando una aplicación Express se despliega en modo de desarrollo o presenta un 
 
 Asimismo, las aplicaciones Express suelen exponer endpoints de depuración e inspección que no fueron deshabilitados antes de la publicación, como `/debug`, `/trace` o `/metrics`. En entornos mal configurados, el acceso a estos endpoints o la lectura de errores puede exponer las variables de entorno globales de la aplicación (`process.env`), filtrando claves maestras de bases de datos, tokens de API de terceros y secretos de firma JWT.
 
+<br>
+
 ### 3.5 Servidor Web Nginx
 Nginx es un servidor web de alto rendimiento y proxy inverso diseñado para gestionar miles de conexiones concurrentes mediante una arquitectura orientada a eventos.
 
@@ -148,13 +193,24 @@ Cuando Nginx está configurado para servir archivos estáticos, la inclusión de
 
 Al igual que Apache con `mod_status`, Nginx incluye el módulo `stub_status` para monitorizar el rendimiento. Si la ruta `/nginx_status` se encuentra habilitada públicamente sin restricciones de IP, un auditor puede extraer datos sobre las conexiones activas, peticiones aceptadas y el volumen de tráfico procesado por el servidor.
 
+<br>
+
 ### 3.6 Configuraciones Erróneas Comunes y Escaneo Automatizado
 Existen patrones de configuración errónea que aplican a todos los servidores web independientemente del software utilizado. La ausencia de encabezados HTTP de seguridad debilita la postura defensiva del sitio: la falta de `Strict-Transport-Security` (HSTS) permite ataques de degradación de SSL; la ausencia de `Content-Security-Policy` (CSP) facilita la ejecución de scripts maliciosos en ataques XSS; y la falta de `X-Frame-Options` o `X-Content-Type-Options` expone la aplicación a ataques de Clickjacking y derivación de tipos MIME (MIME-sniffing).
 
 El escaneo automatizado de servidores web se complementa con herramientas como Nikto, un escáner de vulnerabilidades especializado en identificar archivos peligrosos, configuraciones predeterminadas obsoletas, programas CGI vulnerables y errores de servidor. El comando básico de ejecución es `nikto -h http://TARGET/`. Nikto analiza las cabeceras HTTP, prueba la existencia de más de 6700 archivos y programas potencialmente peligrosos y verifica la presencia de opciones de servidor inseguras.
 
+
+<br>
+
 ---
 
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Ataques a Servidores Web II (Web Server Attacks - II)</span>
+</h2>
 ## 4. Ataques a Servidores Web II (Web Server Attacks - II)
 
 ### 4.1 Identificación y Arquitectura de Internet Information Services (IIS)
