@@ -6,7 +6,7 @@
 
 ---
 
-> **Estructura del Manual:** Organizado cronológicamente según los módulos oficiales de Nmap en TryHackMe. Contiene la explicación técnica profunda, fundamentos de red, sintaxis de comandos, flags TCP, técnicas de evasión de cortafuegos y el uso del motor NSE, todo redactado en texto continuo explicativo sin listas de viñetas para facilitar su consulta directa en exámenes o auditorías.
+> En este módulo, aprenderemos a utilizar el escáner Nmap para descubrir hosts en vivo y escanearlos en busca de puertos abiertos. Obtendrá un conocimiento profundo de los diversos escaneos de puertos Nmap, desde escaneos de puertos de conexión TCP y sigilo (SYN) hasta escaneos de puertos nulos, FIN, Xmas y hosts inactivos (zombie). Exploraremos en detalle las opciones avanzadas, incluyendo la fragmentación de paquetes, la suplantación de direcciones de origen y los secuelos. Aprenderemos a usar el sistema operativo y la detección de servicios y cómo aprovechar el poder de los scripts Nmap. Finalmente, demostramos las diferentes formas de guardar los resultados del escaneo Nmap para futuras referencias.
 
 ---
 
@@ -33,7 +33,7 @@
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <img src="" width="60px" align="absmiddle">
   <span> Descubrimiento de Hosts en Vivo con Nmap</span>
 </h2>
 
@@ -81,9 +81,16 @@ Durante la fase de descubrimiento de hosts, Nmap realiza por defecto una consult
 
 Para optimizar el rendimiento y acelerar el tiempo de ejecución, se utiliza el parámetro `-n`, el cual inhabilita por completo la resolución DNS inversa. Por el contrario, si el objetivo de la auditoría es mapear detalladamente los nombres de dominio internos de la infraestructura, se especifica la opción `-R` para forzar la resolución DNS inversa sobre todas las direcciones IP del rango, incluso sobre aquellas que no hayan respondido a las sondas de descubrimiento. Si se requiere consultar un servidor DNS específico que no sea el predeterminado del sistema operativo, se utiliza la opción `--dns-servers IP_SERVIDOR_DNS`.
 
+<br>
+
 ---
 
-## 2. Escaneos Básicos de Puertos con Nmap
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Escaneos Básicos de Puertos con Nmap</span>
+</h2>
 
 ### 2.1 Puertos TCP y UDP y la Arquitectura de Servicios
 Una vez identificados los hosts activos en la red, el siguiente paso operativo consiste en el escaneo de puertos. Mientas que una dirección IP identifica de forma unívoca a un equipo en la red, un puerto TCP o UDP identifica un servicio de red específico que se está ejecutando dentro de ese host. Existen 65.535 puertos para el protocolo TCP y otros 65.535 puertos para el protocolo UDP, divididos convencionalmente en puertos conocidos (0 al 1023), puertos registrados (1024 al 49151) y puertos dinámicos o privados (49152 al 65535).
@@ -146,9 +153,16 @@ Por defecto, si no se especifican puertos, Nmap escanea los 1.000 puertos TCP m�
 
 La velocidad del escaneo se gestiona mediante las plantillas de tiempo de Nmap, ajustables desde `-T0` hasta `-T5`. Las plantillas `-T0` (Paranoid) y `-T1` (Sneaky) están diseñadas para evadir sistemas de detección de intrusos (IDS) emitiendo sondas con intervalos de varios minutos. La plantilla `-T2` (Polite) reduce la velocidad para no saturar enlaces de red frágiles. La plantilla `-T3` (Normal) es el comportamiento por defecto. La plantilla `-T4` (Aggressive) es la opción recomendada para entornos de laboratorio, CTFs y exámenes, aumentando el paralelismo y reduciendo los tiempos de retransmisión sin perder precisión. La plantilla `-T5` (Insane) envía paquetes de forma extremadamente agresiva, adecuada solo para redes locales gigabit de altísima velocidad.
 
+<br>
+
 ---
 
-## 3. Escaneos Avanzados de Puertos con Nmap
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Escaneos Avanzados de Puertos con Nmap</span>
+</h2>
 
 ### 3.1 Escaneos Sigilosos Anómalos (Null, FIN y Xmas)
 Los escaneos anómalos o de banderas modificadas aprovechan una sutileza de la especificación RFC 793 del protocolo TCP para determinar el estado de los puertos sin enviar el paquete SYN convencional. Según la norma RFC 793, cualquier segmento TCP recibido en un puerto cerrado que no contenga los bits SYN, RST o ACK activados debe forzar al sistema receptor a responder con un paquete RST. Por el contrario, si el puerto se encuentra abierto, la especificación establece que la sonda anómala debe ser ignorada silenciosamente sin emitir ninguna respuesta.
@@ -205,7 +219,16 @@ En el segundo paso, el auditor envía un paquete `SYN` hacia el puerto del objet
 
 En el tercer paso, el auditor vuelve a enviar un paquete `SYN/ACK` al zombie para consultar su número de identificación IP. Si el nuevo valor devuelto es `IP ID = 31002`, significa que el zombie emitió un paquete intermedio hacia el objetivo, confirmando de forma categórica que el puerto del objetivo está `open`. Si el valor devuelto es `IP ID = 31001`, significa que el objetivo no generó respuesta hacia el zombie, confirmando que el puerto está `closed` o `filtered`.
 
+<br>
+
 ---
+
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Escaneos Posteriores a Puertos y Scripts NSE con Nmap</span>
+</h2>
 
 ## 4. Escaneos Posteriores a Puertos y Scripts NSE con Nmap
 
