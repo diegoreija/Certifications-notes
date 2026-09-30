@@ -1,5 +1,5 @@
 <h1>
-  <img src="" width="70px" align="absmiddle">
+  <img src="https://assets.tryhackme.com/img/modules/nmap.png" width="70px" align="absmiddle">
   <span> NMAP</span>
 </h1>
 
@@ -33,7 +33,7 @@
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778939441152" width="60px" align="absmiddle">
   <span> Descubrimiento de Hosts en Vivo con Nmap</span>
 </h2>
 
@@ -88,7 +88,7 @@ Para optimizar el rendimiento y acelerar el tiempo de ejecución, se utiliza el 
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778940381346" width="60px" align="absmiddle">
   <span> Escaneos Básicos de Puertos con Nmap</span>
 </h2>
 
@@ -160,7 +160,7 @@ La velocidad del escaneo se gestiona mediante las plantillas de tiempo de Nmap, 
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778952120935" width="60px" align="absmiddle">
   <span> Escaneos Avanzados de Puertos con Nmap</span>
 </h2>
 
@@ -226,7 +226,7 @@ En el tercer paso, el auditor vuelve a enviar un paquete `SYN/ACK` al zombie par
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778952644474" width="60px" align="absmiddle">
   <span> Escaneos Posteriores a Puertos y Scripts NSE con Nmap</span>
 </h2>
 
