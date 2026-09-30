@@ -1,5 +1,5 @@
 <h1>
-  <img src="" width="70px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/modules/password-attacks-1778911061072.svg" width="70px" align="absmiddle">
   <span> NMAP</span>
 </h1>
 
@@ -32,7 +32,7 @@ ightarrow$ Target: `bob@tryaccounting.thm` | Envío de correos de phishing con s
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62ff64c3c859dc0042b2b9f6-1775735976220" width="60px" align="absmiddle">
   <span> Fundamentos de Phishing e Ingeniería Social (Phishing Basics)</span>
 </h2>
 
@@ -135,7 +135,7 @@ Para el envío del correo de phishing utilizando suplantación de identidad, se 
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/69208399c3fe8b0416103c51e291e117.png" width="60px" align="absmiddle">
   <span> Forzado Bruto en Línea de Servicios (Hydra)</span>
 </h2>
 
@@ -193,7 +193,7 @@ Un ejemplo concreto de comando para forzar un formulario web POST incluye el par
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1777417887997" width="60px" align="absmiddle">
   <span> Introducción y Generación de Listas de Palabras (Wordlists)</span>
 </h2>
 
@@ -258,7 +258,7 @@ Una vez generadas las listas limpias, se procede a su utilización en herramient
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/6808d44047ac5684351c94da-1779195328261" width="60px" align="absmiddle">
   <span> Descifrado de Contraseñas y Hashes (Password Cracking)</span>
 </h2>
 
