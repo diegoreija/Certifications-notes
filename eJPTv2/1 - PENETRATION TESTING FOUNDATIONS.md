@@ -1,5 +1,5 @@
 <h1>
-  <img src="https://cdn-images.tryhackme.com/modules/network-reconnaissance-1778908506629.svg" width="70px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/modules/penetration-testing-foundations2-1778905673450.svg" width="70px" align="absmiddle">
   <span> PENETRATION TESTING FOUNDATIONS</span>
 </h1>
 
@@ -24,7 +24,7 @@
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1779358981056" width="60px" align="absmiddle">
   <span> Práctica Guiada: Pentesting Web Completo (Guided Pentest: Web)</span>
 </h2>
 
@@ -83,7 +83,7 @@ El compromiso total del servidor se logró encadenando cuatro vulnerabilidades i
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/6989b1062386d3517f652edd-1778494472489" width="60px" align="absmiddle">
   <span> Práctica Guiada: Pentesting de Infraestructura (Guide Pentest: Infrastructure)</span>
 </h2>
 
@@ -122,7 +122,7 @@ El informe de auditoría constituye el único entregable tangible que recibe el 
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/645b19f5d5848d004ab9c9e2-1779773270969" width="60px" align="absmiddle">
   <span> Fundamentos y Filosofía del Pentesting (Dive Into Pentesting)</span>
 </h2>
 
@@ -166,7 +166,7 @@ El éxito de una auditoría depende del cumplimiento de buenas prácticas operat
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/5f04259cf9bf5b57aed2c476-1748005316630" width="60px" align="absmiddle">
   <span> Marco de Trabajo Cyber Kill Chain (Cyber Kill Chain - Lockheed Martin)</span>
 </h2>
 
@@ -215,7 +215,7 @@ La séptima y última fase corresponde a las Acciones sobre Objetivos (*Actions 
 <br>
 
 <h2>
-  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/5f04259cf9bf5b57aed2c476-1779119105504" width="60px" align="absmiddle">
   <span> Marcos de Trabajo de Pentesting (Penetration Testing Frameworks)</span>
 </h2>
 
