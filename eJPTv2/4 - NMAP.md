@@ -230,8 +230,6 @@ En el tercer paso, el auditor vuelve a enviar un paquete `SYN/ACK` al zombie par
   <span> Escaneos Posteriores a Puertos y Scripts NSE con Nmap</span>
 </h2>
 
-## 4. Escaneos Posteriores a Puertos y Scripts NSE con Nmap
-
 ### 4.1 Detección de Servicios y Versiones (`-sV`)
 Descubrir que un puerto TCP está abierto representa solo la mitad del trabajo de reconocimiento. Para identificar vulnerabilidades explotables en una auditoría, es imprescindible determinar qué aplicación específica y qué versión exacta se está ejecutando en ese puerto. La opción `-sV` habilita el motor de detección de servicios y versiones de Nmap.
 
