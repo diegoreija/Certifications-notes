@@ -36,8 +36,6 @@ ightarrow$ Target: `bob@tryaccounting.thm` | Envío de correos de phishing con s
   <span> Fundamentos de Phishing e Ingeniería Social (Phishing Basics)</span>
 </h2>
 
-## 1. Fundamentos de Phishing e Ingeniería Social (Phishing Basics)
-
 ### 1.1 Definición y Vectores de Ataque
 El phishing representa una de las formas de ciberataque más prevalentes y efectivas en el panorama de la seguridad informática, fundamentándose en la manipulación psicológica y la ingeniería social para engañar a los individuos e inducirlos a revelar información confidencial o ejecutar código malicioso en sus sistemas. A diferencia de los vectores de ataque puramente técnicos que explotan vulnerabilidades de software o fallos de configuración, el phishing se dirige explícitamente a las debilidades del factor humano, diseñando narrativas creíbles y aplicando tácticas de presión emocional para que las víctimas comprometan voluntariamente su propia seguridad.
 
@@ -130,9 +128,16 @@ Al seleccionar la opción de importación personalizada, la herramienta solicita
 
 Para el envío del correo de phishing utilizando suplantación de identidad, se accede al cliente web de correo Rainloop alojado en el puerto 8080 del entorno de laboratorio. Mediante el uso de alias de correo preconfigurados en la plataforma, el auditor selecciona la dirección corporativa interna de soporte como remitente del mensaje dirigido a la cuenta del objetivo financiero. Al redactar un asunto persuasivo sobre la caducidad inminente de la contraseña corporativa e incluir el enlace que redirige hacia la IP del servidor de SET, el mensaje evade los filtros básicos de seguridad por correo al simular una comunicación interna legítima. Cuando el usuario abre el enlace e introduce sus datos en la página clonada, las credenciales son capturadas en texto plano y mostradas de forma inmediata en la consola de la terminal de SET.
 
+<br>
+
 ---
 
-## 2. Forzado Bruto en Línea de Servicios (Hydra)
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Forzado Bruto en Línea de Servicios (Hydra)</span>
+</h2>
 
 ### 2.1 Introducción a Hydra
 Hydra es la herramienta estándar de la industria para la ejecución de ataques de descifrado de contraseñas en línea mediante la técnica de fuerza bruta y diccionario sobre servicios de autenticación de red. A diferencia de las herramientas de descifrado fuera de línea que procesan hashes almacenados localmente a gran velocidad, Hydra interactúa directamente con los protocolos de red expuestos por un servidor remoto, simulando intentos de inicio de sesión continuos para determinar las credenciales correctas.
@@ -181,9 +186,16 @@ El módulo `http-post-form` de Hydra toma como argumento una cadena dividida en 
 
 Un ejemplo concreto de comando para forzar un formulario web POST incluye el parámetro `-l` con el usuario objetivo, el parámetro `-P` con el archivo de contraseñas, la dirección IP del servidor web, el módulo `http-post-form` y la cadena de especificación del formulario. Durante la ejecución, Hydra sustituye las variables de usuario y clave en cada petición HTTP POST, analizando la respuesta devuelta por el servidor web hasta identificar la combinación que no genera el mensaje de fallo configurado.
 
+<br>
+
 ---
 
-## 3. Introducción y Generación de Listas de Palabras (Wordlists)
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Introducción y Generación de Listas de Palabras (Wordlists)</span>
+</h2>
 
 ### 3.1 Definición y Usos de las Listas de Palabras
 Una lista de palabras o wordlist es un archivo de texto plano estructurado de manera simple, donde cada línea contiene una palabra, frase, contraseña, nombre de usuario, parámetro o ruta de archivo potencial. En la disciplina de la ciberseguridad y las pruebas de penetración, estas listas constituyen la materia prima para automatizar procesos de prueba y adivinación que resultarían inviables de forma manual.
@@ -239,9 +251,16 @@ La normalización implica combinar los diferentes archivos de palabras extraído
 
 Una vez generadas las listas limpias, se procede a su utilización en herramientas de enumeración como ffuf para descubrir directorios y archivos ocultos en el servidor web. El comando de ffuf utiliza el parámetro `-w` para especificar la lista de palabras limpia, el parámetro `-u` indicando la URL del objetivo con el marcador de posición `FUZZ`, el parámetro `-e` para probar extensiones de archivo habituales como `.php` o `.html`, y el parámetro `-mc` para filtrar únicamente aquellas respuestas que devuelvan códigos de estado HTTP satisfactorios o de redirección. Tras identificar rutas de acceso ocultas o paneles de administración, el auditor utiliza las listas de nombres de usuario y contraseñas limpias desarrolladas previamente para ejecutar el forzado bruto del formulario mediante Hydra.
 
+<br>
+
 ---
 
-## 4. Descifrado de Contraseñas y Hashes (Password Cracking)
+<br>
+
+<h2>
+  <img src="" width="60px" align="absmiddle">
+  <span> Descifrado de Contraseñas y Hashes (Password Cracking)</span>
+</h2>
 
 ### 4.1 Almacenamiento Seguro de Contraseñas y Funciones Hash
 El almacenamiento de contraseñas en texto plano dentro de una base de datos representa un fallo de seguridad catastrófico. Ante cualquier acceso no autorizado o filtración de la base de datos, todas las cuentas de los usuarios quedan expuestas de forma inmediata sin necesidad de procesamiento técnico adicional. La solución estándar en la ingeniería de software consiste en almacenar un resumen criptográfico o hash de la contraseña en lugar de la clave original.
