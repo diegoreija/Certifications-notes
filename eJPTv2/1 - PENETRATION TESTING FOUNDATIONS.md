@@ -1,9 +1,11 @@
-# 🛡️ METODOLOGÍA INTEGRAL DE PENTESTING: WEB, INFRAESTRUCTURA Y MARCOS TEÓRICOS
-### *Guía Didáctica y Manual de Explotación – Certificación eJPT*
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/network-reconnaissance-1778908506629.svg" width="70px" align="absmiddle">
+  <span> PENETRATION TESTING FOUNDATIONS</span>
+</h1>
 
 ---
 
-> **Estructura del Manual:** Reordenado con precisión según la secuencia requerida. El manual se divide en cinco secciones principales desarrolladas en profundidad: Pentesting Web Guiado (RecruitX), Pentesting de Infraestructura Guiado (UnrealIRCd), Fundamentos y Filosofía del Pentesting (Dive Into Pentesting), la Cyber Kill Chain de Lockheed Martin y los Marcos de Trabajo de Pentesting (OSSTMM, OWASP WSTG, NIST SP 800-115, PTES, ISSAF, MITRE ATT&CK y otros). Todo el contenido está redactado en texto continuo explicativo sin listas ni viñetas.
+> Este módulo te lanza directamente a la acción con dos interacciones guiadas: una contra una aplicación web y otra contra una máquina vulnerable. Caminará a través de cada ataque, desde el reconocimiento hasta la explotación, verá cómo la cadena de eliminación cibernética estructura el pensamiento del atacante y cumplirá con los marcos estándar de la industria que dan forma a los compromisos profesionales. Al final, tendrás el modelo mental de trabajo en el que se basa cada prueba de penetración.
 
 ---
 
@@ -19,140 +21,243 @@
 
 ---
 
-## 1. Práctica Guiada: Pentesting Web Completo (Guided Pentest: Web)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <span> Práctica Guiada: Pentesting Web Completo (Guided Pentest: Web)</span>
+</h2>
 
 ### 1.1. Introducción al Escenario y Entorno
 En este escenario práctico, el cliente es una empresa que opera un portal de reclutamiento interno denominado RecruitX. En esta plataforma, los gerentes de contratación publican ofertas laborales, los candidatos envían sus solicitudes y los administradores gestionan todo el flujo de trabajo corporativo. El objetivo de la auditoría es evaluar la seguridad del sistema partiendo desde una posición sin credenciales previas ni conocimiento de la arquitectura interna, hasta alcanzar la ejecución remota de código en el servidor backend.
 
+<br>
+
 ### 1.2. Reconocimiento y Escaneo de Puertos
 El proceso de auditoría comienza ineludiblemente con una fase de reconocimiento activo para cartografiar los servicios expuestos en el servidor objetivo. Al ejecutar el escaneo de puertos mediante Nmap con detección de versiones y scripts por defecto, se identifican cuatro puertos abiertos principales. El puerto 22 alberga el servicio SSH en su versión OpenSSH, útil en fases posteriores si se obtienen credenciales válidas. El puerto 80 corresponde a la aplicación web principal servida por Apache 2.4.58. El puerto 3306 aloja el motor de base de datos MySQL, indicando que la aplicación construye consultas dinámicas en el servidor. Finalmente, el puerto 8080 muestra la página por defecto de Apache. Esta identificación inicial confirma la presencia de un entorno LAMP tradicional compuesto por Linux, Apache, MySQL y PHP.
+
+<br>
 
 ### 1.3. Exploración de la Aplicación y Encabezados HTTP
 Al navegar hacia la aplicación en el puerto 80, se observa la interfaz principal con una barra de navegación que contiene enlaces a las secciones de Inicio, Empleos, Inicio de Sesión y Registro, así como un pie de página que indica la versión RecruitX v2.4. El análisis de las cabeceras de respuesta HTTP del servidor mediante herramientas como curl permite confirmar que el servidor utiliza Apache 2.4.58 sobre Ubuntu y gestiona las sesiones de usuario mediante la cookie estandarizada PHPSESSID. Esta inspección inicial valida que las sesiones se mantienen en el servidor PHP y que cualquier fallo en el manejo de entradas o cookies impactará directamente en la seguridad de la aplicación.
 
+<br>
+
 ### 1.4. Enumeración de Directorios y Rutas
 Para descubrir recursos ocultos que no están vinculados visualmente en el menú de navegación, se realiza una enumeración de directorios utilizando Gobuster con una lista de palabras estandarizada. El resultado de la búsqueda revela varias rutas críticas. La ruta /admin conduce al panel de administración, aunque redirige a los usuarios no autenticados hacia la página de login. La ruta /api expone un punto final de API que lista sus propios métodos. La ruta /reset.php corresponde al mecanismo de restablecimiento de contraseña. La ruta /uploads representa el directorio de almacenamiento de archivos subidos por los usuarios. Finalmente, las páginas /profile.php y /dashboard.php requieren una sesión autenticada para su visualización.
+
+<br>
 
 ### 1.5. Registro de Usuario e Inspección de la API
 Para analizar las áreas restringidas de la aplicación, se crea una cuenta de prueba a través del formulario de registro en /register.php utilizando credenciales de usuario estándar. Tras iniciar sesión, la aplicación redirige al panel de control en /dashboard.php. Al inspeccionar el punto final de la API descubierto anteriormente en la ruta /api, se observa que la API lista públicamente todas sus rutas internas en formato JSON sin requerir ningún tipo de autenticación previa. Esta divulgación no autorizada de información de rutas de backend constituye un fallo de configuración que facilita al atacante el mapeo exacto de los puntos de entrada del sistema.
 
+<br>
+
 ### 1.6. Descubrimiento y Explotación de IDOR
 Al visitar la sección de perfil de usuario en /profile.php, se observa que la URL incluye un parámetro numérico con la estructura /profile.php?id=6, indicando que la cuenta de prueba es la sexta creada en la base de datos. Al modificar manualmente este identificador en la barra de direcciones por un valor inferior como id=1, la aplicación devuelve el perfil completo de Sarah Mitchell, la administradora del sistema. La aplicación no realiza ninguna verificación de autorización en el servidor para comprobar si el usuario autenticado tiene permisos para ver dicho registro, configurando una vulnerabilidad de Referencia Directa Insegura a Objetos (IDOR). Además, al consultar el punto final de la API en /api/user?id=1 mediante curl incluyendo la cookie de sesión PHPSESSID, la API devuelve el objeto JSON completo con el nombre, correo electrónico s.mitchell@recruitx.thm, rol de administradora y fecha de creación, permitiendo la enumeración masiva de todos los usuarios del sistema al incrementar el ID del 1 al 5.
+
+<br>
 
 ### 1.7. Análisis del Mecanismo Débil de Restablecimiento de Contraseña
 Conociendo la dirección de correo electrónico de la administradora s.mitchell@recruitx.thm, se analiza el funcionamiento del restablecimiento de contraseñas en /reset.php. Al probar el formulario con la cuenta de usuario de prueba, la aplicación genera un token numérico de seis dígitos y lo imprime directamente en la pantalla de respuesta HTTP en lugar de enviarlo de forma privada por correo electrónico. Al generar múltiples tokens consecutivos, se confirma que todos corresponden a cadenas numéricas aleatorias de seis dígitos entre 000000 y 999999. Al solicitar el restablecimiento para el correo de la administradora, la aplicación vuelve a exponer el token directamente en la respuesta visual. Utilizando dicho token exposed, se accede a la interfaz de confirmación de clave, se establece una nueva contraseña y se inicia sesión con éxito como la administradora Sarah Mitchell.
 
+<br>
+
 ### 1.8. Acceso al Panel de Administración y Filtrado Incompleto de Subida
 Tras acceder con el rol de administradora, se explora el panel de gestión en /admin. Entre las opciones disponibles destaca la función de subida de archivos en /admin/upload.php destinada a documentos de candidatos. La inspección del código fuente HTML revela un formulario con el atributo accept restringido a archivos PDF, DOCX e imágenes. Al eliminar dicho atributo en el inspector del navegador para eludir la restricción de cliente y subir un archivo de texto plano test.txt, el servidor responde con un rechazo, confirmando la presencia de una validación del lado del servidor. Al intentar subir un archivo PHP estándar denominado shell.php, el servidor vuelve a rechazar la petición, demostrando la presencia de una lista de denegación de extensiones. Sin embargo, al cambiar la extensión del archivo a una extensión alternativa procesada por Apache como PHP, concretamente test.phtml, el servidor acepta el archivo y lo almacena en /uploads/documents/test.phtml, confirmando que la lista de denegación no contempla todas las extensiones ejecutables.
+
+<br>
 
 ### 1.9. Ejecución Remota de Código (RCE) mediante Web Shell y Shell Inverso
 Para lograr la ejecución remota de comandos, se crea un script de web shell en PHP guardado como shell.phtml que utiliza la función shell_exec($_GET['cmd']). Tras subir el archivo a través del panel de administración, se accede a la URL /uploads/documents/shell.phtml?cmd=id, confirmando que el servidor ejecuta los comandos del sistema operativo bajo el usuario web www-data. A través de la web shell se leen archivos del sistema como /etc/passwd. Para obtener una sesión interactiva completa, se inicia un oyente de Netcat en la máquina atacante mediante el comando nc -lvnp 4444 y se desencadena una orden de shell inverso en Python codificada en formato URL a través del parámetro cmd de la web shell. Tras establecer la conexión saliente, se obtiene una terminal interactiva en el servidor objetivo y se lee la bandera de confirmación en el sistema de archivos.
 
+<br>
+
 ### 1.10. Análisis de la Cadena de Ataque y Remediación
 El compromiso total del servidor se logró encadenando cuatro vulnerabilidades independientes. El reconocimiento inicial y la divulgación de la API permitieron identificar las rutas. La vulnerabilidad IDOR expuso la dirección de correo de la administradora. El mecanismo débil de restablecimiento de contraseña expuso el token en la respuesta HTTP permitiendo la toma de control de la cuenta. Finalmente, el filtrado incompleto de extensiones en el panel de administración permitió la subida de la shell web y el logro de RCE. Las remediaciones recomendadas incluyen implementar verificaciones obligatorias de autorización a nivel de objeto en cada solicitud de perfil, enviar los tokens de restablecimiento exclusivamente por correo cifrado mediante valores criptográficos de 32 caracteres, utilizar listas de permitidos estrictas para las extensiones de archivos subidos almacenando los documentos fuera de la raíz web, y restringir la API únicamente a usuarios autenticados.
 
+<br>
+
 ---
 
-## 2. Práctica Guiada: Pentesting de Infraestructura (Guide Pentest: Infrastructure)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <span> Práctica Guiada: Pentesting de Infraestructura (Guide Pentest: Infrastructure)</span>
+</h2>
 
 ### 2.1. Filosofía y Mentalidad en la Enumeración de Infraestructura
 Las pruebas de penetración de infraestructura no se reducen a la ejecución autómata de herramientas de escaneo, sino que exigen una mentalidad analítica que combina la visión de un administrador de sistemas, un programador y un atacante real. La enumeración representa la fase más crítica de cualquier auditoría de red. Su objetivo es recopilar la mayor cantidad posible de información estructurada sobre la máquina objetivo antes de lanzar cualquier intento de explotación. Omitir una verificación rigurosa de puertos, servicios y versiones conduce inevitablemente a suposiciones erróneas y oportunidades perdidas durante la evaluación.
 
+<br>
+
 ### 2.2. Escaneo Inteligente con Nmap
 El escaneo de infraestructura se ejecuta con Nmap de forma intencionada utilizando el comando nmap -sV -sC -oN scan.txt dirección_ip. La bandera -sV sondea los puertos abiertos para identificar los servicios exactos y sus versiones correspondientes. La bandera -sC ejecuta el conjunto predeterminado de scripts NSE para extraer detalles adicionales como banners del sistema y métodos de autenticación soportados. La bandera -oN guarda los resultados en un archivo de texto para su posterior consulta y documentación en el informe final. El resultado del escaneo en la máquina objetivo revela dos servicios activos: OpenSSH 9.6p1 en el puerto 22 y el servidor de chat IRC UnrealIRCd en el puerto 6667.
+
+<br>
 
 ### 2.3. Análisis de Vulnerabilidades y Conexión de Puntos
 El análisis de vulnerabilidades consiste en tomar los datos recopilados durante la enumeración y evaluar qué configuraciones o versiones de software presentan debilidades explotables. Al consultar la herramienta Searchsploit o fuentes públicas de vulnerabilidades para las versiones detectadas, se observa que OpenSSH 9.6p1 es una versión reciente sin exploits públicos aplicables. Sin embargo, al buscar la versión específica de UnrealIRCd detectada en el puerto 6667, se identifica inmediatamente una vulnerabilidad crítica correspondiente a una puerta trasera (*backdoor*) introducida históricamente en el código fuente del software entre noviembre de 2009 y junio de 2010.
 
+<br>
+
 ### 2.4. Obtención de Acceso Inicial con Metasploit
 Para explotar la puerta trasera de UnrealIRCd, se inicia el marco de trabajo Metasploit ejecutando msfconsole en la terminal. A continuación, se busca el módulo específico mediante la orden search unrealircd y se selecciona el módulo correspondiente con el comando use 0. Al inspeccionar los parámetros requeridos mediante show options, se establece la dirección IP de la máquina objetivo en la variable RHOSTS mediante set RHOSTS dirección_ip. Posteriormente, se selecciona una carga útil genérica de shell inverso para sistemas Unix mediante el comando set payload cmd/unix/reverse. Se configuran las variables de conexión de la máquina atacante mediante set LHOST dirección_ip y set LPORT 443. Al ejecutar el comando exploit, el módulo aprovecha la puerta trasera del servidor IRC y devuelve una sesión de comandos remota con privilegios del usuario de bajo nivel webmaster, permitiendo leer la primera bandera del sistema en /home/webmaster/flag.txt.
+
+<br>
 
 ### 2.5. Post-Explotación, Búsqueda de Credenciales y Escalada de Privilegios
 Una vez obtenido el acceso inicial como usuario no privilegiado, se inicia la fase de post-explotación para buscar vectores de escalada de privilegios hacia el usuario root. Se ejecuta un comando de búsqueda en el sistema de archivos para localizar archivos que contengan la cadena contraseña en su nombre mediante la orden find / -name password* 2>/dev/null, redirigiendo los errores a /dev/null. Entre los resultados destaca el archivo /etc/password.txt. Al leer su contenido mediante cat /etc/password.txt, se descubren las credenciales en texto plano del usuario root. Dado que la sesión de shell interactiva actual no dispone de un TTY completo para ejecutar el comando su, se aprovecha el servicio SSH identificado en el puerto 22. Desde una nueva terminal de la máquina atacante, se ejecuta ssh root@dirección_ip, se ingresa la clave descubierta y se obtiene acceso total con privilegios de superusuario, capturando la bandera final en /root/flag.txt.
 
+<br>
+
 ### 2.6. Elaboración del Informe de Auditoría Técnica
 El informe de auditoría constituye el único entregable tangible que recibe el cliente y debe reflejar con máxima rigurosidad el trabajo realizado. Un informe profesional debe incluir una portada con título, nombre del auditor, datos de contacto y control de versiones, un resumen ejecutivo redactado en lenguaje no técnico para la dirección, un resumen técnico con el análisis del impacto para los responsables de ingeniería, una matriz de vulnerabilidades priorizada por severidad y una sección de explotación detallada. Para el hallazgo de escalada de privilegios, la ficha técnica debe indicar el título Contraseña de root en texto plano, clasificar la severidad como Crítica, describir cómo la clave almacenada en /etc/password.txt permitió la toma total del servidor, detallar los tres pasos de explotación seguidos y recomendar la eliminación inmediata del archivo, la rotación de claves, el uso de gestores de secretos y la restricción de permisos en el sistema de archivos.
 
+<br>
+
 ---
 
-## 3. Fundamentos y Filosofía del Pentesting (Dive Into Pentesting)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <span> Fundamentos y Filosofía del Pentesting (Dive Into Pentesting)</span>
+</h2>
 
 ### 3.1. Definición de Pentesting frente a Hacking Malicioso
 Las pruebas de penetración o pentesting representan una evaluación de seguridad proactiva y autorizada que se realiza sobre aplicaciones, redes o sistemas de información para identificar y corregir debilidades antes de que sean explotadas por ciberdelincuentes. La diferencia fundamental entre un auditor de seguridad y un atacante malicioso radica en cuatro factores esenciales. El primero es la autorización, ya que el pentester cuenta con el consentimiento explícito y por escrito del propietario del sistema. El segundo es el alcance, puesto que el auditor opera dentro de límites estrictamente definidos para no afectar servicios críticos. El tercero es la cobertura, ya que el pentester busca evaluar exhaustivamente toda la superficie de ataque, a diferencia del atacante que busca la vía de menor resistencia. El cuarto es la responsabilidad profesional, puesto que el auditor responde por el impacto de sus acciones y presenta recomendaciones de remediación.
 
+<br>
+
 ### 3.2. Áreas de Enfoque: Pentesting Web y Pentesting de Red
 El pentesting abarca diversas especialidades operativas. El pentesting de aplicaciones web se enfoca en evaluar la seguridad de las interfaces y APIs expuestas a Internet desde la perspectiva del usuario. Sus pruebas analizan los mecanismos de autenticación, controles de autorización, gestión de sesiones, validación de entradas y salidas, y configuraciones de seguridad del servidor web. Por su parte, el pentesting de red evalúa la infraestructura subyacente de comunicación. Las pruebas externas analizan los servicios expuestos a Internet desde la postura de un atacante remoto sin acceso previo. Las pruebas internas simulan el escenario de brecha asumida (*assumed breach*), donde el atacante ya dispone de acceso a un segmento de la red corporativa y busca realizar movimientos laterales, escalar privilegios o exfiltrar información confidencial.
+
+<br>
 
 ### 3.3. Vulnerabilidad, Amenaza y Cálculo del Riesgo
 Para evaluar la postura de seguridad de una organización es imprescindible comprender la relación entre tres conceptos interconectados. Una vulnerabilidad es una debilidad o fallo presente en un software, sistema o configuración que puede ser aprovechado para comprometer la seguridad. Una amenaza es cualquier agente, evento o actor malicioso con la capacidad e intención de explotar esa vulnerabilidad. El riesgo representa la probabilidad de que una amenaza explote con éxito una vulnerabilidad multiplicada por el impacto o daño resultante en el negocio. La fórmula simplificada Riesgo es igual a Vulnerabilidad por Amenaza ilustra que sin vulnerabilidad no hay riesgo, y que una debilidad técnica aislada en un entorno de red segregado sin amenazas asociadas representa un riesgo bajo.
 
+<br>
+
 ### 3.4. Ciclo de Gestión del Riesgo, Aceptación y Transferencia
 La gestión del riesgo es un proceso continuo compuesto por cuatro fases secuenciales: identificación de activos y debilidades, análisis del impacto y probabilidad, mitigación mediante la aplicación de parches o controles de seguridad, y monitorización constante para detectar nuevas amenazas. En determinados escenarios empresariales, cuando el coste de aplicar una medida correctora supera con creces el impacto de un posible incidente y el activo afectado es secundario, la organización puede optar formalmente por la aceptación del riesgo. Alternativamente, la empresa puede recurrir a la transferencia del riesgo mediante la contratación de ciberseguros para cubrir los costes financieros derivados de una brecha de datos.
+
+<br>
 
 ### 3.5. Causa Raíz de las Vulnerabilidades
 Las vulnerabilidades no surgen por azar, sino como consecuencia de fallos en el diseño, desarrollo e integración de sistemas. Entre las causas más comunes destacan las suposiciones humanas, donde los desarrolladores asumen que los usuarios interactuarán de forma legítima omitiendo validaciones de entrada. Los errores de código (*bugs*) generan comportamientos no deseados debido a lógica defectuosa. La complejidad de los sistemas modernos, que integran múltiples microservicios y APIs de terceros, incrementa la probabilidad de errores de configuración. La sobrepersonalización de soluciones propietarias en lugar de utilizar marcos estandarizados introduce fallos en el manejo de sesiones y contraseñas. Finalmente, la ausencia de seguridad desde la fase de diseño (*security by design*) genera debilidades arquitectónicas en las aplicaciones.
 
+<br>
+
 ### 3.6. La Mentalidad del Pentester: Cualidades Efectivas frente a Inefectivas
 Un pentester eficiente combina competencias técnicas con una mentalidad estructurada y adaptativa. Sus cualidades principales incluyen la comprensión profunda del funcionamiento del objetivo antes de atacar, una rigurosa atención al detalle para detectar desviaciones sutiles, una curiosidad constante basada en formular preguntas hipotéticas, la capacidad de priorizar las funciones de mayor impacto de negocio, la evaluación del riesgo dentro del contexto real de la empresa y el pensamiento creativo para encadenar vulnerabilidades menores. Por el contrario, una mentalidad ineficiente se caracteriza por precipitarse a la explotación sin entender el sistema, ignorar el contexto de negocio, depender excesivamente de herramientas automatizadas, realizar suposiciones sin verificación, sufrir de visión de túnel al fijarse en un único vector y seguir listas de verificación de forma autómata.
+
+<br>
 
 ### 3.7. Buenas Prácticas Operativas y Principios Éticos
 El éxito de una auditoría depende del cumplimiento de buenas prácticas operativas como el registro detallado de notas durante las pruebas, la recolección oportuna de evidencias mediante capturas de pantalla y registros de tráfico, la gestión eficiente del tiempo reservando margen para la redacción del informe, la comunicación proactiva de bloqueos o hallazgos críticos al cliente y el mantenimiento de una actitud profesional en todo momento. Asimismo, la práctica del pentesting se rige por tres principios fundamentales: la ética al respetar el alcance y proteger los datos confidenciales, el permiso mediante autorizaciones por escrito antes de cualquier acción, y la confianza mutua demostrada mediante transparencia, profesionalidad y rigor técnico.
 
+<br>
+
 ---
 
-## 4. Marco de Trabajo Cyber Kill Chain (Cyber Kill Chain - Lockheed Martin)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <span> Marco de Trabajo Cyber Kill Chain (Cyber Kill Chain - Lockheed Martin)</span>
+</h2>
 
 ### 4.1. Introducción a la Cyber Kill Chain
 La Cyber Kill Chain es un marco de ciberseguridad desarrollado por Lockheed Martin en el año 2011, adaptado de las cadenas de destrucción militares para analizar y descomponer el ciclo de vida de un ciberataque. El modelo establece que cualquier ataque avanzado se compone de siete fases secuenciales e interconectadas: Reconocimiento, Armamento, Entrega, Explotación, Instalación, Comando y Control, y Acciones sobre Objetivos. El principio fundamental del marco radica en que interrumpiendo el ataque en cualquiera de las fases iniciales se rompe la cadena completa, neutralizando el impacto del adversario antes de que alcance sus objetivos finales.
 
+<br>
+
 ### 4.2. Reconocimiento Pasivo y Activo y Contramedidas
 La primera fase corresponde al Reconocimiento, donde el atacante recopila información sobre la infraestructura, tecnologías y personal de la organización objetivo. En el reconocimiento pasivo se emplean técnicas silenciosas como la consulta de registros WHOIS y DNS, raspado web, análisis de redes sociales y Google Dorks. En el reconocimiento activo se realiza interacción directa con los sistemas mediante escaneo de puertos de red, escaneo de vulnerabilidades y pruebas de ingeniería social. Las contramedidas defensivas incluyen minimizar la información pública expuesta en internet, contratar servicios de privacidad en registros WHOIS, monitorizar activamente el tráfico de red e inspeccionar los registros del sistema para detectar intentos de escaneo.
+
+<br>
 
 ### 4.3. Armamento y Contramedidas
 En la segunda fase, denominada Armamento (*Weaponisation*), el atacante utiliza la información obtenida para empaquetar un exploit ajustado a la vulnerabilidad detectada junto con una carga útil maliciosa (*payload*). Para evadir los controles antivirus, se recurre a la ofuscación de código o al empaquetado dentro de archivos inocuos como documentos de Microsoft Office con macros VBA maliciosas o archivos PDF. Las contramedidas en esta etapa abarcan la formación continua de los empleados en concienciación cibernética, la deshabilitación de macros no firmadas mediante políticas de grupo en Windows y la reducción de la superficie de ataque desinstalando complementos o software innecesario.
 
+<br>
+
 ### 4.4. Entrega y Contramedidas
 La tercera fase es la Entrega (*Delivery*), donde el atacante transmite el arma cibernética hacia el entorno de la víctima. Los vectores más comunes incluyen correos de phishing masivo o spear phishing con adjuntos o enlaces maliciosos, páginas web comprometidas, malvertising, mensajes de texto (smishing), dispositivos USB abandonados o abuso de plataformas legítimas de intercambio de archivos. Las contramedidas defensivas comprenden la implantación de pasarelas de filtrado de correo y contenido web, el despliegue de cortafuegos de aplicaciones web (WAF) y la educación del personal en navegación segura.
+
+<br>
 
 ### 4.5. Explotación y Contramedidas
 Una vez entregada la carga útil, se alcanza la cuarta fase de Explotación (*Exploitation*), donde el código malicioso se ejecuta aprovechando una vulnerabilidad técnica en el software del cliente o del servidor, una configuración incorrecta o la reutilización de credenciales débiles. En ocasiones, los ataques explotan vulnerabilidades de día cero (*zero-day*) desconocidas por el fabricante. Las contramedidas defensivas requieren una gestión rigurosa de parches de seguridad, el uso de autenticación multifactor (MFA) para invalidar el robo de claves, el escaneo periódico de vulnerabilidades y el uso de Sistemas de Prevención de Intrusiones (IPS) y WAF para bloquear patrones de ataque.
 
+<br>
+
 ### 4.6. Instalación, Persistencia y Contramedidas
 La quinta fase es la Instalación (*Installation*), donde el atacante asegura su acceso permanente en el sistema comprometido para no tener que repetir la fase de explotación en el futuro. Las técnicas de persistencia incluyen la creación de tareas programadas en Windows, trabajos cron en Linux, instalación de servicios o demonios, despliegue de shells web bajo protocolo HTTPS y uso de binarios del propio sistema (*LOLBins*). Las contramedidas incluyen la implantación de soluciones de Detección y Respuesta en Puntos Finales (EDR), la auditoría constante de nuevos servicios y procesos, la aplicación de listas de permitidos de aplicaciones (*whitelisting*) y la comparación periódica con líneas base seguras.
+
+<br>
 
 ### 4.7. Comando y Control (C2) y Contramedidas
 En la sexta fase, denominada Comando y Control (*C2*), el malware instalado establece un canal de comunicación saliente encubierto entre el sistema comprometido y la infraestructura del atacante. Para no ser detectado por los cortafuegos, el tráfico C2 suele camuflarse utilizando protocolos estándar como HTTP, HTTPS, DNS o SMTP, aplicando cifrado, algoritmos de generación de dominios (DGA) o técnicas de Fast Flux. Las contramedidas incluyen el análisis de tráfico en cortafuegos e IDS/IPS, la inspección profunda de paquetes HTTPS mediante descifrado SSL, la monitorización de peticiones DNS inusuales y el uso de honeypots para identificar conexiones maliciosas.
 
+<br>
+
 ### 4.8. Acciones sobre Objetivos y Contramedidas
 La séptima y última fase corresponde a las Acciones sobre Objetivos (*Actions on Objectives*), donde el atacante ejecuta la finalidad última de la intrusión. Estas acciones varían desde la exfiltración masiva de datos confidenciales en ataques de espionaje, el cifrado de archivos con solicitudes de rescate en ataques de ransomware, la destrucción de datos para causar interrupción operativa o el movimiento lateral hacia otros segmentos de la red interna. Las contramedidas incluyen el uso de soluciones de Prevención de Pérdida de Datos (DLP), copias de seguridad aisladas e inmutables, la segmentación estricta de la red bajo el principio de mínimo privilegio y el monitoreo del comportamiento de usuarios mediante EDR y SIEM.
 
+<br>
+
 ---
 
-## 5. Marcos de Trabajo de Pentesting (Penetration Testing Frameworks)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/66704dd0e54a1f39bff7b1a1-1735574284071" width="60px" align="absmiddle">
+  <span> Marcos de Trabajo de Pentesting (Penetration Testing Frameworks)</span>
+</h2>
 
 ### 5.1. Introducción a las Metodologías y Marcos de Trabajo
 Un marco de trabajo o *framework* de pentesting es un conjunto estructurado de metodologías, directrices y procedimientos que guía a los profesionales de la seguridad a lo largo de todas las fases de una auditoría. Sin un marco metodológico, una prueba de penetración se convierte en una serie de comprobaciones aleatorias y desorganizadas que pueden omitir vectores críticos, generar problemas legales por exceso de alcance o entregar informes inútiles para el cliente. El uso de metodologías estandarizadas garantiza la exhaustividad de las pruebas, la consistencia en los resultados de diferentes auditores, el cumplimiento de requisitos normativos y una comunicación transparente con la dirección.
 
+<br>
+
 ### 2.2. OSSTMM (Manual de Metodología de Pruebas de Seguridad de Código Abierto)
 El Manual de Metodología de Pruebas de Seguridad de Código Abierto (OSSTMM), desarrollado por ISECOM, aplica el método científico a las auditorías de seguridad basándose en métricas cuantitativas e irrefutables en lugar de opiniones subjetivas. El marco organiza las pruebas en torno a cinco canales de seguridad: Seguridad Humana (HUMSEC), Seguridad Física (PHYSSEC), Comunicaciones Inalámbricas (SPECSEC), Telecomunicaciones (COMSEC) y Redes de Datos (DATASEC). Su métrica central es el Valor de Evaluación del Riesgo (RAV), que mide matemáticamente el equilibrio entre la superficie de ataque expuesta y los controles de seguridad implantados. Su flujo de trabajo se divide en cuatro fases: Inducción, Interacción, Consulta e Intervención, entregando sus resultados en el formato estandarizado STAR.
+
+<br>
 
 ### 5.3. OWASP WSTG (Guía de Pruebas de Seguridad Web de OWASP)
 La Guía de Pruebas de Seguridad Web de OWASP (WSTG) es la metodología de referencia estándar para la evaluación de seguridad en aplicaciones web. Organiza las auditorías en más de 90 casos de prueba prácticos agrupados en doce categorías que abarcan la recopilación de información, gestión de configuración, autenticación, autorización, gestión de sesiones, validación de datos, manejo de errores, criptografía, lógica de negocio y APIs. Lo que distingue a WSTG es su alineación con las cinco fases del Ciclo de Vida del Desarrollo de Software (SDLC), integrando la seguridad desde la definición de requisitos y el diseño arquitectónico hasta la revisión de código, pruebas en despliegue y mantenimiento posterior.
 
+<br>
+
 ### 5.4. NIST SP 800-115 (Guía Técnica del Gobierno Federal de EE. UU.)
 La Publicación Especial 800-115 del NIST es la guía técnica oficial del gobierno federal de los Estados Unidos para la evaluación de la seguridad de la información. No es una metodología exclusiva de pentesting, sino un marco amplio que combina revisiones de documentación, análisis de configuraciones, escaneo de vulnerabilidades y pruebas de penetración. Su flujo operativo se organiza en tres fases: Planificación (donde se formalizan las reglas de compromiso y planes de prueba), Ejecución (que progresa desde la revisión pasiva y el análisis de objetivos hasta la validación de debilidades y la simulación de ataques) y Post-prueba (enfocada en el análisis de impacto y la entrega de recomendaciones remediables).
+
+<br>
 
 ### 5.5. PTES (Estándar de Ejecución de Pruebas de Penetración)
 El Estándar de Ejecución de Pruebas de Penetración (PTES) es una metodología práctica desarrollada por profesionales del sector para reflejar el flujo de trabajo real de una auditoría corporativa de principio a fin. El marco se compone de siete fases secuenciales: Interacciones previas al compromiso (definición del alcance y acuerdos legales), Recopilación de inteligencia (reconocimiento pasivo y activo), Modelado de amenazas (identificación de activos y vectores prioritarios), Análisis de vulnerabilidades (detección y verificación de fallos), Explotación (demostración de acceso), Post-explotación (evaluación del impacto real de negocio y movimiento lateral) e Informes (redacción de resúmenes ejecutivos y técnicos).
 
+<br>
+
 ### 5.6. ISSAF (Marco de Evaluación de Seguridad de Sistemas de Información)
 El Marco de Evaluación de Seguridad de Sistemas de Información (ISSAF), creado por OISSG, es una metodología histórica caracterizada por su modelo operativo de nueve pasos. Aunque la guía de herramientas específicas ha quedado desfasada por falta de mantenimiento, su lógica conceptual sigue siendo una de las mejores representaciones de la progresión de un atacante. Sus nueve pasos abarcan la recopilación de información, mapeo de red, identificación de vulnerabilidades, penetración inicial, obtención de acceso y escalada de privilegios, enumeración avanzada, movimiento lateral a sistemas remotos, mantenimiento del acceso persistente y cobertura de pistas.
+
+<br>
 
 ### 5.7. MITRE ATT&CK (Base de Conocimiento de Comportamiento Adversario)
 MITRE ATT&CK no es un marco metodológico de pruebas, sino una base de conocimientos global que cataloga y mapea las tácticas, técnicas y subtécnicas utilizadas por grupos de amenazas reales en el mundo real. Su matriz para entornos empresariales organiza el comportamiento adversario en 14 tácticas principales que representan el objetivo del atacante, detallando en cada columna las técnicas específicas utilizadas. ATT&CK complementa a marcos como PTES o WSTG permitiendo mapear cada hallazgo de la auditoría con un ID de técnica estandarizado (por ejemplo, T1566 para Phishing o T1190 para Explotación de Aplicaciones Expuestas), elevando el informe técnico a una evaluación basada en inteligencia de amenazas.
 
+<br>
+
 ### 5.8. Otros Marcos Notables (WASC, CSA CCM, OWASP MASTG, PCI DSS, CBEST)
 Existen marcos especializados según el ámbito de la auditoría. La Clasificación de Amenazas WASC categoriza vulnerabilidades en aplicaciones web. La Matriz de Controles en la Nube (CCM) de CSA evalúa la gobernanza y seguridad en arquitecturas cloud. La Guía de Pruebas de Seguridad de Aplicaciones Móviles (MASTG) de OWASP proporciona casos de prueba específicos para aplicaciones Android e iOS junto con el estándar MASVS. Las Directrices de Pentesting de PCI DSS dictan los requisitos obligatorios de pruebas anuales y segmentación para entornos que procesan datos de tarjetas de pago. Finalmente, el Marco CBEST del Banco de Inglaterra exige pruebas dirigidas por inteligencia de amenazas para entidades del sector financiero del Reino Unido.
+
+<br>
 
 ### 5.9. Criterios de Selección del Marco Adecuado
 La elección de la metodología adecuada depende de cuatro criterios fundamentales. El primer criterio es el alcance y tipo de objetivo, seleccionando WSTG para aplicaciones web, MASTG para móviles o PTES/OSSTMM para redes completas. El segundo criterio son las obligaciones regulatorias y de cumplimiento, que pueden imponer el uso de PCI DSS, NIST SP 800-115 o CBEST. El tercer criterio es la necesidad de resultados cuantitativos y repetibles, donde la métrica RAV de OSSTMM resulta idónea para comparar evoluciones temporales. El cuarto criterio abarca los recursos y la experiencia del equipo auditor. En la práctica, las auditorías reales suelen combinar un marco primario operativo como PTES con marcos específicos como WSTG o ATT&CK para maximizar el valor entregado al cliente.
