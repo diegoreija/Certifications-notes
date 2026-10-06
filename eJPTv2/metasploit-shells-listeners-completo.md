@@ -1,3 +1,4 @@
+
 # 🛡️ GUÍA COMPLETA DE METASPLOIT, SHELLS, OYENTES Y GENERACIÓN DE PAYLOADS
 ### *Manual Extensivo y Guía de Referencia Técnica – Certificación eJPT*
 
