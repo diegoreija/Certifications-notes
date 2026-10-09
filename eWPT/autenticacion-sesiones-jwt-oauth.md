@@ -1,9 +1,13 @@
-# 🛡️ GUÍA COMPLETA DE ENUMERACIÓN, GESTIÓN DE SESIONES, SEGURIDAD JWT Y VULNERABILIDADES OAUTH
-### *Manual Extensivo y Guía de Consulta Técnica – Certificación eJPT*
+<h1>
+  <img src="https://assets.tryhackme.com/img/modules/authentication.svg" width="70px" align="absmiddle">
+  <span> Authentication</span>
+</h1>
 
 ---
 
-> **Estructura del Manual:** Organizado según los apuntes de Notion de TryHackMe (**Enumeration & Brute Force**, **Session Management**, **JWT Security** y **OAuth Vulnerabilities**). Cada sección principal contiene explicaciones conceptuales exhaustivas, vectores de ataque, desgloses técnicos paso a paso, ejemplos prácticos de laboratorio, comandos de terminal, scripts de explotación y métodos de remediación formal para resolver cualquier duda directamente durante un examen o auditoría de seguridad.
+> Domina la explotación de los mecanismos de autenticación a través de escenarios del mundo real, cubriendo la enumeración y la fuerza bruta, la gestión de sesiones, las vulnerabilidades OAuth, MFA/2FA y JWT.
+
+Este módulo se centrará en comprender y mitigar las vulnerabilidades críticas en los sistemas de autenticación. Primero aprenderemos los mecanismos de autenticación de enumeración y forzamiento bruto, seguido de explorar la gestión de sesiones y varios ataques que se pueden realizar contra implementaciones inseguras. Cubriremos una variedad de temas, incluyendo JSON Web Tokens (JWT), vulnerabilidades OAuth que cubren parámetros de estado faltantes, robo de tokens y muchos más. Finalmente, exploraremos la importancia de MFA/2FA para agregar capas de seguridad y explotarlas. Todas las habitaciones están equipadas con escenarios realistas que prácticamente le permiten explorar y abordar varias vulnerabilidades.
 
 ---
 
@@ -31,13 +35,19 @@
 
 ---
 
+<br>
 
-## 1. Enumeración y Fuerza Bruta (Enumeration & Brute Force)
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/645b19f5d5848d004ab9c9e2-1719928599415" width="60px" align="absmiddle">
+  <span> Enumeración y Fuerza Bruta (Enumeration & Brute Force)</span>
+</h2>
 
 ### 1.1. Fundamentos de la Enumeración en Autenticación
 La enumeración de autenticación constituye la fase analítica en la que un auditor descompone metódicamente los mecanismos de control de acceso para descubrir qué identidades son legítimas dentro de la aplicación objetivo. En términos operativos, este proceso puede compararse con el trabajo minucioso de un detective digital que no se limita a marcar casillas en una lista de verificación, sino que analiza cómo encajan todas las piezas de la infraestructura. Descubrir un nombre de usuario válido permite reducir a la mitad la complejidad de un ataque posterior de fuerza bruta, ya que el evaluador puede focalizar todos sus recursos exclusivamente en descifrar la contraseña correspondiente en lugar de realizar conjeturas simultáneas sobre ambas variables.
 
 Además de los nombres de usuario, la enumeración abarca la deducción de las políticas de contraseñas impuestas por la organización. Muchos sistemas web devuelven mensajes informativos cuando un usuario introduce una clave que no cumple los estándares establecidos, como por ejemplo la obligatoriedad de contener caracteres en mayúscula, dígitos numéricos o caracteres especiales. En aplicaciones desarrolladas en lenguajes como PHP, estas reglas suelen implementarse mediante expresiones regulares que filtran la entrada antes de procesarla en la base de datos. Si el sistema emite un error que describe exactamente la regla de validación violada, el auditor puede utilizar dicha información para estructurar diccionarios personalizados con herramientas como Crunch o aplicar reglas específicas en Hashcat, descartando millones de combinaciones inútiles que de otro modo consumirían tiempo y ancho de banda innecesariamente.
+
+<br>
 
 ### 1.2. Puntos Habituales de Enumeración en Aplicaciones Web
 Las interfaces web modernas están diseñadas para maximizar la comodidad del usuario, pero a menudo esa misma usabilidad introduce vectores críticos de divulgación de información. El primer punto crítico se localiza en los formularios de registro de nuevos usuarios. Con el fin de agilizar el proceso, muchas aplicaciones notifican de forma inmediata en pantalla si una dirección de correo electrónico o un nombre de usuario ya se encuentra ocupado. Esta retroalimentación, aunque beneficiosa para la experiencia de usuario, confirma de forma categórica la existencia de cuentas activas en la base de datos, permitiendo a un auditor compilar una lista exhaustiva de identidades legítimas mediante el envío automatizado de listas de palabras.
@@ -45,6 +55,8 @@ Las interfaces web modernas están diseñadas para maximizar la comodidad del us
 El segundo vector común reside en los mecanismos de restablecimiento de contraseña. Al solicitar la recuperación de una cuenta, las aplicaciones que no han sido blindadas presentan variaciones perceptibles en sus respuestas dependiendo de si el usuario introducido existe o no. Un sistema vulnerable puede devolver un mensaje afirmativo indicando que se ha enviado un enlace de recuperación si la cuenta es válida, o una advertencia señalando que el correo no fue encontrado en el sistema. Incluso cuando el mensaje textual se unifica para evitar discrepancias, diferencias sutiles en los tiempos de respuesta del servidor backend causadas por el envío real de un correo electrónico frente a una denegación inmediata pueden revelar la validez de la cuenta.
 
 El tercer vector reside en los errores verbosos generados durante los intentos fallidos de inicio de sesión. Cuando el mensaje de error distingue explícitamente entre un nombre de usuario inexistente y una contraseña incorrecta para una cuenta que sí existe, el sistema elimina toda ambigüedad. Finalmente, la información procedente de violaciones de datos previas de dominio público ofrece una fuente invaluable de inteligencia externa. La tendencia generalizada de los usuarios a reutilizar nombres de usuario y contraseñas a través de múltiples plataformas permite a los auditores comprobar si las identidades comprometidas en incidentes históricos pasados continuan vigentes en la aplicación evaluada.
+
+<br>
 
 ### 1.3. Enumeración de Usuarios mediante Errores Verbosos
 Los errores verbosos actúan como susurros involuntarios del sistema que revelan información confidencial originalmente destinada a los desarrolladores durante las fases de depuración y pruebas. En un entorno de producción, estos mensajes detallados exponen rutas internas del sistema de archivos, revelando la estructura de directorios del servidor web y la ubicación potencial de archivos de configuración o claves de cifrado que no deberían ser accesibles al público. Asimismo, pueden filtrar detalles de la arquitectura de la base de datos, incluyendo nombres de tablas, nombres de columnas y el motor de almacenamiento subyacente.
@@ -70,6 +82,8 @@ with open(wordlist_path, "r", encoding="utf-8") as file:
             pass
 ```
 
+<br>
+
 ### 1.4. Explotación de la Lógica en Restablecimientos de Contraseña
 El flujo de recuperación de cuentas es un componente esencial para la operatividad de los usuarios, pero su implementación introduce riesgos severos cuando la generación y validación de los factores de recuperación no se ejecutan bajo normas estrictas de aleatoriedad. Entre los métodos más comunes se encuentran el restablecimiento mediante enlaces enviados por correo electrónico, la validación basada en preguntas de seguridad preconfiguradas y la transmisión de códigos por mensajería SMS. Las preguntas de seguridad son frecuentemente vulneradas mediante técnicas de reconocimiento OSINT en redes sociales, mientras que los códigos SMS son susceptibles a ataques de duplicación de tarjeta SIM o intercepción de señal celular.
 
@@ -83,12 +97,16 @@ crunch 3 3 0123456789 -o tokens_numericos.txt
 
 Una vez cargado el diccionario generado dentro de la pestaña de cargas útiles de Burp Intruder, se inicia el ataque de fuerza bruta. Dado que las solicitudes con tokens erróneos devuelven un mensaje de error con un tamaño de respuesta homogéneo, la solicitud que contiene el token legítimo se identifica de forma instantánea al observar una longitud de contenido notablemente superior o una redirección hacia el formulario de ingreso de nueva contraseña. Aunque en aplicaciones reales se utilicen códigos de seis dígitos, el principio operativo es idéntico y resulta explotable siempre que el servidor carezca de mecanismos estrictos de limitación de tasa (*Rate Limiting*) o bloquee el token tras un número reducido de intentos fallidos.
 
+<br>
+
 ### 1.5. Explotación de la Autenticación Básica HTTP
 La autenticación básica HTTP, formalizada en el estándar RFC 7617, representa uno de los métodos de control de acceso más antiguos y simples en la web. Carece por completo de gestión de sesiones, almacenamiento de cookies y soporte para autenticación de múltiples factores. A pesar de su antigüedad, se mantiene ampliamente distribuida en dispositivos de red con recursos de procesamiento limitados, tales como enrutadores domésticos, conmutadores, cámaras IP y paneles de gestión de servicios como Apache Tomcat o interfaces de monitoreo interno donde la sobrecarga de mantener estados de sesión complejos resulta innecesaria.
 
 El protocolo funciona mediante un mecanismo de desafío y respuesta. Cuando un cliente solicita un recurso protegido sin credenciales, el servidor responde con un código de estado HTTP 401 Unauthorized y la cabecera `WWW-Authenticate: Basic realm="Zona Protegida"`. A partir de ese momento, el navegador o la herramienta de auditoría debe enviar en cada petición subsiguiente el encabezado `Authorization: Basic [CADENA_BASE64]`, donde dicha cadena corresponde a la representación en Base64 del nombre de usuario y la contraseña separados por dos puntos (`usuario:contraseña`). Debido a que Base64 es un esquema de codificación reversible y no un algoritmo de cifrado, la transmisión de estas credenciales sobre canales HTTP sin TLS expone la información a cualquier oyente en la red local.
 
 Para realizar un ataque de fuerza bruta sobre un servicio de autenticación básica con Burp Suite, se captura la petición HTTP que contiene la cabecera de autorización y se transfiere a Intruder. En la pestaña de posiciones, se decodifica manualmente la cadena Base64, se reemplaza por el formato en texto plano `admin:CONTRASEÑA` y se selecciona la contraseña como la única posición variable. En la pestaña de cargas útiles, se carga una lista de credenciales comunes, como el diccionario de 500 contraseñas peores de SecLists. En la sección de procesamiento de cargas útiles (*Payload Processing*), se agregan dos reglas indispensables: en primer lugar, una regla de prefijo que anteponga la cadena `admin:` al valor de la contraseña; en segundo lugar, una regla que aplique codificación Base64 al resultado combinado. Asimismo, en la sección inferior de codificación de caracteres, es obligatorio desmarcar el signo igual (`=`) de la lista de caracteres a codificar por URL para evitar que el relleno final de Base64 se corrompa durante el envío. La obtención de un código de respuesta HTTP 200 OK confirma la combinación correcta.
+
+<br>
 
 ### 1.6. Reconocimiento y OSINT mediante Wayback Machine y Google Dorks
 El reconocimiento de fuentes abiertas (OSINT) permite a los auditores identificar vectores de autenticación desprotegidos y recursos sensibles sin interactuar directamente con la infraestructura actual de la víctima. La plataforma Internet Archive y su servicio Wayback Machine permiten explorar versiones históricas de aplicaciones web desde sus orígenes. Con frecuencia, los desarrolladores eliminan enlaces a paneles administrativos, scripts de prueba o respaldos de bases de datos de la interfaz pública moderna, pero dejan los archivos activos en los directorios del servidor backend.
@@ -105,8 +123,16 @@ grep -E "\.(sql|bak|log|old|env|txt|php\?)" urls_historicas.txt
 
 De manera complementaria, los operadores de búsqueda avanzada de Google, conocidos como Google Dorks, permiten interrogar los índices de los motores de búsqueda para localizar información confidencial expuesta accidentalmente. Entre las consultas más efectivas para auditorías de autenticación se encuentran las destinadas a ubicar paneles administrativos directos mediante la sintaxis `site:dominio-objetivo.thm inurl:admin` o `site:dominio-objetivo.thm inurl:login`. Para localizar archivos de registro que contengan contraseñas enviadas en texto claro se emplea `filetype:log "password" site:dominio-objetivo.thm`. Asimismo, el descubrimiento de copias de seguridad de directorios completos expuestos por malas configuraciones de listado se realiza mediante `intitle:"index of" "backup" site:dominio-objetivo.thm`.
 
+<br>
 
-## 2. Gestión de Sesiones (Session Management)
+---
+
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/6093e17fa004d20049b6933e-1722528947776" width="60px" align="absmiddle">
+  <span> Gestión de Sesiones (Session Management)</span>
+</h2>
 
 ### 2.1. Arquitectura y Ciclo de Vida de la Gestión de Sesiones
 El protocolo HTTP fue concebido desde sus orígenes como un protocolo sin estado (*stateless*), lo que significa que cada solicitud enviada por un cliente se procesa de forma independiente sin que el servidor conserve memoria de las interacciones previas. Para permitir que los usuarios interactúen con plataformas complejas sin tener que enviar sus credenciales completas de usuario y contraseña en cada petición individual, se desarrollaron los mecanismos de gestión de sesiones. La sesión actúa como un identificador temporal que asocia el tráfico del navegador con el estado de autenticación y los privilegios almacenados en el backend.
@@ -121,6 +147,8 @@ La tercera fase corresponde al vencimiento de la sesión. Debido a que el protoc
 
 La cuarta fase es la terminación explícita de la sesión. Cuando el usuario hace clic en la opción de cierre de sesión (*Logout*), la aplicación está obligada a destruir de forma irreversible el registro de sesión en la base de datos o en el almacén de memoria del servidor, garantizando que el identificador quede inutilizado de inmediato incluso si aún no había alcanzado su fecha de expiración cronológica.
 
+<br>
+
 ### 2.2. Autenticación frente a Autorización y el Modelo IAAA
 La comprensión de los fallos en la gestión de sesiones requiere delimitar con precisión los conceptos de autenticación y autorización mediante el modelo clásico IAAA, que define los cuatro pilares del control de acceso:
 
@@ -131,6 +159,8 @@ El segundo pilar es la Autenticación, que representa el proceso técnico de ver
 El tercer pilar es la Autorización, consistente en garantizar que un usuario autenticado disponga de los derechos y permisos específicos para llevar a cabo la operación que está solicitando. En el flujo cotidiano de la aplicación, el seguimiento de la sesión es el componente encargado de mantener el contexto de autorización.
 
 El cuarto pilar es la Responsabilidad o Rendición de Cuentas (*Accountability*), que radica en la generación de registros de auditoría (*logs*) inmutables que asocien cada acción ejecutada con el identificador de sesión y la identidad del usuario responsable. Estos registros son indispensables para la reconstrucción forense de incidentes de seguridad y deben registrar tanto las solicitudes autorizadas como las denegadas.
+
+<br>
 
 ### 2.3. Comparativa Técnica: Cookies frente a Tokens
 La gestión de sesiones se divide principalmente en dos paradigmas tecnológicos: el enfoque tradicional basado en cookies y el enfoque contemporáneo basado en tokens, cada uno con propiedades operativas y perfiles de riesgo marcadamente distintos.
@@ -149,6 +179,8 @@ En el modelo de cookies, la directiva `Set-Cookie` emitida por el servidor permi
 
 Por el contrario, el modelo de tokens delega la responsabilidad del manejo de la sesión en el cliente. La aplicación web entrega el token en el cuerpo JSON de una respuesta tras la autenticación, y el código JavaScript lo almacena en `LocalStorage`. En cada petición posterior a la API, el script lee el token y lo inyecta dentro del encabezado `Authorization`. Aunque este enfoque resuelve la compatibilidad con dispositivos móviles y clientes sin soporte de cookies, introduce riesgos significativos si el token no cuenta con mecanismos criptográficos robustos de integridad o si la aplicación resulta vulnerable a ataques XSS que permitan su extracción inmediata.
 
+<br>
+
 ### 2.4. Amenazas y Defensas en las Fases del Ciclo de Vida de Sesión
 Durante la creación de sesiones, una vulnerabilidad recurrente es el uso de valores de sesión débiles o predecibles. Esto ocurre cuando los desarrolladores implementan esquemas de generación propios que concatenan nombres de usuario codificados en Base64 con marcas de tiempo predecibles. Si un auditor logra realizar ingeniería inversa sobre el algoritmo de emisión, puede sintetizar identificadores válidos y secuestrar cuentas arbitrarias. 
 
@@ -158,13 +190,23 @@ En la fase de seguimiento de sesión, los desvíos de autorización se dividen e
 
 Finalmente, en las etapas de expiración y terminación, los fallos comunes radican en vidas útiles excesivamente prolongadas y en la omisión de la destrucción del estado de sesión en el lado del servidor durante el cierre de sesión. Si el botón de cerrar sesión únicamente borra la cookie en el navegador del cliente pero mantiene el identificador activo en el backend, un atacante que haya interceptado la cookie previamente podrá seguir utilizándola indefinidamente. La arquitectura segura exige la invalidación inmediata del registro de sesión en la base de datos y la revocación forzosa de todas las sesiones activas en caso de que se realice un restablecimiento de contraseña.
 
+<br>
 
-## 3. Seguridad en JSON Web Tokens (JWT Security)
+---
+
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/6093e17fa004d20049b6933e-1725877138785" width="60px" align="absmiddle">
+  <span> Seguridad en JSON Web Tokens (JWT Security)</span>
+</h2>
 
 ### 3.1. Arquitectura de las APIs y Gestión de Sesiones basada en Tokens
 El crecimiento exponencial de las arquitecturas orientadas a microservicios y aplicaciones móviles impulsó la adopción de Interfaces de Programación de Aplicaciones (APIs) como núcleo del desarrollo web moderno. A diferencia de las plataformas tradicionales basadas en monolitos, una única API centralizada sirve de forma simultánea a interfaces web, aplicaciones nativas para Android o iOS y servicios externos de terceros. En este ecosistema heterogéneo, el uso de cookies resulta ineficiente o directamente inviable, ya que las aplicaciones móviles y los scripts de backend no gestionan el almacenamiento de cookies del mismo modo que un navegador comercial.
 
 Para resolver esta limitación, se estandarizó la gestión de sesiones basada en tokens utilizando el formato JSON Web Token (JWT), formalizado en el estándar RFC 7519. Un JWT es un contenedor de datos compacto, autónomo y verificado criptográficamente que transmite afirmaciones (*claims*) entre dos entidades de red. Debido a que el token es completamente autónomo y contiene en su propia estructura la identidad del usuario, sus roles y su fecha de expiración, los servidores de aplicaciones pueden verificar su legitimidad sin necesidad de realizar consultas recurrentes a una base de datos central de sesiones, posibilitando una escalabilidad horizontal masiva.
+
+<br>
 
 ### 3.2. Estructura y Funcionamiento Criptográfico de un JWT
 Un token JWT se compone de tres bloques claramente diferenciados, codificados individualmente en Base64URL y delimitados entre sí mediante caracteres de punto (`.`):
@@ -198,6 +240,8 @@ En primer lugar, el algoritmo `none`, que indica que el token carece por complet
 En segundo lugar, los algoritmos simétricos, como HMAC-SHA256 (HS256), que requieren que tanto el emisor que crea el token como el receptor que lo valida compartan la misma clave secreta privada.
 En tercer lugar, los algoritmos asimétricos, como RSA-SHA256 (RS256), en los que el emisor firma el token utilizando una clave privada que mantiene en estricto secreto, mientras que cualquier servicio receptor puede verificar la firma empleando la clave pública asociada distribuida abiertamente.
 
+<br>
+
 ### 3.3. Vulnerabilidad: Divulgación de Información Sensible
 Uno de los errores conceptuales más frecuentes cometidos por desarrolladores noveles consiste en asumir que, debido a que el JWT se representa como una cadena codificada, su contenido es inaccesible o está cifrado. En la configuración estándar, un JWT está firmado pero **no cifrado** (a diferencia de un JSON Web Encryption o JWE). En consecuencia, cualquier persona que posea el token puede decodificar las secciones de encabezado y carga útil de forma instantánea revirtiendo el formato Base64URL.
 
@@ -216,6 +260,8 @@ Al extraer la segunda sección del token recibido y decodificarla utilizando la 
 echo "eyJ1c2VybmFtZSI6InVzZXIiLCJhZG1pbiI6MCwic2VjcmV0X2ZsYWciOiJUSE17SldUX0ZMQVRfRVhQT1NVUkV9In0" | base64 -d
 ```
 
+<br>
+
 ### 3.4. Vulnerabilidad: Omisión Total de Validación de Firma
 La firma digital de un JWT es el único mecanismo que impide a un cliente modificar arbitrariamente sus privilegios. Sin embargo, en ocasiones los desarrolladores configuran bibliotecas de backend para deserializar el token y leer los claims de usuario sin invocar las funciones de verificación criptográfica de la firma. Esto ocurre frecuentemente en puntos finales específicos de una API creados para microservicios internos donde se asumió erróneamente que la verificación ya se había llevado a cabo en una pasarela previa (*API Gateway*).
 
@@ -229,6 +275,8 @@ curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFt
 ```
 
 Al enviar esta estructura mutilada, el servidor backend procesa el claim `admin: 1` sin verificar la autenticidad matemática del mensaje, devolviendo los privilegios y la bandera correspondiente al usuario administrador.
+
+<br>
 
 ### 3.5. Vulnerabilidad: Degradación al Algoritmo `none` (*Algorithm None Downgrade*)
 El estándar oficial de JWT contempla el soporte para un algoritmo denominado `none`, diseñado teóricamente para escenarios en los que la integridad del token ya ha sido validada por un canal seguro previo o en entornos de prueba locales. Cuando se especifica este algoritmo en el encabezado, el token se considera formalmente un token no firmado, por lo que la sección de la firma debe permanecer vacía.
@@ -247,6 +295,8 @@ curl -H 'Authorization: Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VybmFtZ
 ```
 
 Para remediar esta vulnerabilidad, los desarrolladores deben configurar de forma explícita las bibliotecas de JWT (como `PyJWT`) para que rechacen categóricamente el algoritmo `none` y obliguen a definir una lista explícita de algoritmos válidos en la función de decodificación (por ejemplo, `algorithms=['HS256']`).
+
+<br>
 
 ### 3.6. Vulnerabilidad: Secretos Simétricos Débiles y Descifrado Offline
 En las implementaciones basadas en el algoritmo simétrico HS256, la integridad del token reposa exclusivamente en el secreto compartido utilizado para computar el hash HMAC. Si los desarrolladores seleccionan contraseñas cortas, términos comunes del diccionario o secretos extraídos de plantillas públicas de desarrollo (como `secret`, `password` o `123456`), un atacante que intercepte un único JWT emitido por la plataforma puede someter la firma a un ataque de fuerza bruta offline sin enviar una sola petición al servidor.
@@ -270,6 +320,8 @@ nuevo_payload = {"username": "admin", "admin": 1}
 token_forjado = jwt.encode(nuevo_payload, secreto_recuperado, algorithm="HS256")
 print(f"Token de Administrador Forjado: {token_forjado}")
 ```
+
+<br>
 
 ### 3.7. Vulnerabilidad: Confusión de Algoritmos de Firma (RS256 a HS256)
 El ataque de confusión de algoritmos representa una de las vulnerabilidades más sofisticadas en la gestión de JWT. Ocurre en sistemas donde el servidor original utiliza un algoritmo asimétrico como RS256, en el cual los tokens se firman con una clave privada RSA y se verifican con una clave pública RSA distribuida abiertamente en el servidor o accesible a través de puntos finales de certificados.
@@ -296,6 +348,8 @@ print(f"Token forjado por confusión de algoritmos: {token_forjado}")
 
 Al inyectar este token en la cabecera `Authorization: Bearer` de la solicitud, la API valida la firma y concede los privilegios de administrador requeridos para recuperar la bandera.
 
+<br>
+
 ### 3.8. Vulnerabilidad: Ciclo de Vida y Falta de Caducidad de Tokens
 A diferencia de las cookies de sesión tradicionales, que pueden ser eliminadas de forma centralizada en el servidor en cualquier momento, los JWT son autónomos y no se comunican de vuelta con el backend una vez emitidos. Por esta razón, el control de la vida útil del token descansa fundamentalmente en el claim registrado `exp` (*Expiration Time*), que define en formato de marca de tiempo Unix el momento exacto en el que el token deja de ser válido.
 
@@ -312,9 +366,16 @@ Si un usuario dispone de privilegios de usuario raso en la aplicación `appA`, p
 
 En el laboratorio práctico (Ejemplo 7), se interactúa con dos puntos finales: `example7_appA` y `example7_appB`. Al autenticarse solicitando acceso para la aplicación `appB`, se obtiene un token con privilegios elevados y audiencia destinada a `appB`. Al enviar dicho token hacia el endpoint `example7_appA`, se comprueba que `appA` carece de verificación sobre el claim `aud`, procesando el rol de administrador y permitiendo la captura inmediata de la bandera final del laboratorio.
 
+<br>
+
 ---
 
-## 4. Vulnerabilidades en OAuth (OAuth Vulnerabilities)
+<br>
+
+<h2>
+  <img src="https://cdn-images.tryhackme.com/room-icons/62a7685ca6e7ce005d3f3afe-1721736252781" width="60px" align="absmiddle">
+  <span> Vulnerabilidades en OAuth (OAuth Vulnerabilities)</span>
+</h2>
 
 ### 4.1. Conceptos Fundamentales de OAuth 2.0 y Arquitectura de Roles
 
@@ -342,6 +403,8 @@ El Parámetro de Estado (*State Parameter*) es un valor aleatorio y criptográfi
 
 Los Puntos Finales de Autorización y de Token (*Endpoints*) delimitan las dos etapas de interacción del protocolo. El punto final de autorización gestiona la interfaz interactiva donde el usuario inicia sesión y otorga su consentimiento en el navegador, mientras que el punto final de token procesa solicitudes automáticas de máquina a máquina para intercambiar códigos de autorización por credenciales de acceso.
 
+<br>
+
 ### 4.2. Tipos de Concesión en OAuth 2.0 (Grant Types)
 
 La especificación OAuth 2.0 define diferentes flujos de concesión de autorización diseñados para acomodar diversas arquitecturas de software y modelos de confianza, variando sustancialmente en su robustez criptográfica y superficie de ataque.
@@ -353,6 +416,8 @@ El Flujo Implícito (*Implicit Grant*) fue concebido originalmente para aplicaci
 El Flujo de Credenciales de Contraseña del Propietario del Recurso (*Resource Owner Password Credentials Grant*) permite que el usuario ingrese directamente su nombre de usuario y contraseña en la interfaz de la aplicación cliente, tras lo cual el cliente envía dichas credenciales al servidor de autorización a cambio de un token. Este flujo está estrictamente desaconsejado para aplicaciones de terceros, ya que anula el principio fundamental de no divulgación de credenciales de OAuth, limitándose exclusivamente a clientes de primera parte altamente confiables y a procesos de migración de aplicaciones heredadas, habiendo sido igualmente marcado como obsoleto en OAuth 2.1.
 
 El Flujo de Credenciales de Cliente (*Client Credentials Grant*) se emplea en comunicaciones automatizadas de máquina a máquina o microservicios donde no existe un usuario interactivo. La propia aplicación cliente utiliza su identificador y su secreto corporativo para autenticarse directamente ante el servidor de autorización y obtener un token de acceso que le permita consumir recursos de su propia incumbencia.
+
+<br>
 
 ### 4.3. Flujo de Trabajo Detallado de Autorización (OAuth Flow Paso a Paso)
 
@@ -396,6 +461,8 @@ En la quinta y última fase, el servidor de autorización verifica la autenticid
 }
 ```
 
+<br>
+
 ### 4.4. Descubrimiento y Huella Digital de Servicios OAuth
 
 El reconocimiento técnico de la presencia de flujos OAuth y la identificación del software específico que gestiona la autenticación son pasos preliminares obligatorios durante una auditoría web.
@@ -405,6 +472,8 @@ La primera señal evidente de implementación de OAuth reside en los elementos d
 La confirmación certera de un flujo OAuth se realiza mediante la inspección del tráfico HTTP con herramientas de proxy como Burp Suite, prestando especial atención a las respuestas de redirección 302 hacia dominios de autorización. Estas solicitudes se caracterizan por una estructura de consulta reconocible que incorpora obligatoriamente parámetros como `response_type`, `client_id`, `redirect_uri`, `scope` y `state`. La presencia de `response_type=code` confirma la adopción del flujo de código de autorización, mientras que la presencia de `response_type=token` evidencia la utilización del flujo implícito vulnerable.
 
 Para identificar el framework o biblioteca específica que respalda la solución de OAuth en el servidor de destino, el auditor debe analizar los nombres de los endpoints, las cabeceras HTTP de respuesta y los comentarios del código fuente. Por ejemplo, implementaciones basadas en Python utilizan frecuentemente Django OAuth Toolkit, reconocible por sus rutas predeterminadas `/o/authorize/` o `/oauth/authorize/` y `/o/token/`. En el ecosistema Node.js, las aplicaciones que emplean Passport.js suelen configurar rutas del estilo `/auth/provider/callback`. En entornos Java empresariales, Spring Security OAuth utiliza endpoints como `/oauth/authorize` y `/oauth/token`. La provocación intencionada de fallos en el paso de parámetros (como enviar cadenas vacías en `client_id`) a menudo provoca que el servidor devuelva mensajes de error de depuración o trazas de ejecución que revelan la versión exacta de la biblioteca en uso.
+
+<br>
 
 ### 4.5. Explotación de Redirección Insegura y Secuestro de Tokens (Redirect URI Manipulation)
 
@@ -449,6 +518,8 @@ Con el código de autorización secuestrado en su poder, el atacante procede de 
 
 La remediación indispensable frente a esta amenaza exige la implementación de una validación estricta de cadenas idénticas (*exact string matching*), prohibiendo terminantemente la coincidencia de prefijos laxos, expresiones regulares con comodines y rutas dinámicas. Cada aplicación cliente debe registrar explícitamente sus URLs absolutas de retorno en el panel de control del servidor de autorización, y cualquier discrepancia de un solo carácter en la solicitud debe resultar en el rechazo inmediato de la transacción.
 
+<br>
+
 ### 4.6. Falsificación de Peticiones en Sitios Cruzados en OAuth (OAuth CSRF por State Ausente o Débil)
 
 El parámetro `state` actúa como una defensa anti-CSRF imprescindible en los protocolos de autorización federada. Su propósito es vincular la solicitud inicial emitida por el navegador de un usuario con la respuesta de redirección que posteriormente devuelve el servidor de autorización. Cuando una implementación de OAuth omite el parámetro `state`, utiliza un valor constante o emplea una secuencia predecible, el flujo queda desprotegido frente a ataques de fijación y secuestro de enlace de cuentas.
@@ -470,6 +541,8 @@ El atacante envía este enlace a la víctima a través de correo electrónico o 
 Dado que la aplicación cliente no valida ningún token de estado para verificar si esa petición de retorno corresponde a un flujo iniciado por la víctima, asume que se trata de una autorización válida, canjea el código del atacante por un token de acceso y vincula la cuenta de CoffeeShopApp del atacante a la cuenta de la víctima. Como consecuencia inmediata de esta sincronización cruzada, todos los contactos y registros sensibles de la víctima se transmiten de forma transparente hacia la cuenta de la cafetería controlada por el atacante.
 
 Para prevenir de forma definitiva este vector de ataque, la especificación OAuth exige que el cliente genere un token pseudoaleatorio criptográficamente seguro, lo almacene temporalmente en la sesión del usuario del navegador (por ejemplo en una cookie con atributos de protección) y lo envíe en el parámetro `state` al servidor de autorización. Al procesar la respuesta en el callback, el cliente debe comparar obligatoriamente el valor del parámetro `state` devuelto con el guardado en la sesión local; si los valores no coinciden o el parámetro está ausente, la petición debe cancelarse inmediatamente.
+
+<br>
 
 ### 4.7. Explotación del Flujo de Concesión Implícita (Implicit Grant) mediante XSS
 
@@ -506,6 +579,8 @@ Cuando un usuario legítimo se autentica en la aplicación a través de OAuth y 
 Al inspeccionar los registros del servidor HTTP de Python, el atacante observa la solicitud entrante y recupera el token de acceso en texto claro, adquiriendo la capacidad de consultar y modificar cualquier recurso del usuario en el servidor de la cafetería suplantando su identidad.
 
 La remediación arquitectónica ante esta debilidad consiste en abandonar por completo el uso del flujo implícito en favor del flujo de Código de Autorización reforzado con PKCE (*Proof Key for Code Exchange*), asegurando al mismo tiempo la implementación de defensas robustas contra XSS mediante codificación contextual de salida y políticas estrictas de seguridad de contenido (CSP).
+
+<br>
 
 ### 4.8. Vulnerabilidades Adicionales y la Evolución hacia OAuth 2.1
 
